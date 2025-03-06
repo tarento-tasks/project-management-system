@@ -22,7 +22,6 @@ public class TaskService {
         this.taskRepository = taskRepository;
     }
 
-    // Create a new Task
     public TaskDTO createTask(TaskDTO taskDTO) {
         Task task = new Task();
         task.setTaskName(taskDTO.getTaskName());
@@ -32,27 +31,25 @@ public class TaskService {
         task.setCompleteStatus(taskDTO.getCompleteStatus());
         task.setOpenStatus(taskDTO.getOpenStatus());
         task.setTaskObjective(taskDTO.getTaskObjective());
-        task.setCreatedAt(LocalDateTime.now()); // Set created time
+        task.setCreatedAt(LocalDateTime.now()); 
 
         task = taskRepository.save(task);
         return convertToDTO(task);
     }
 
-    // Get all Tasks
     public List<TaskDTO> getAllTasks() {
         return taskRepository.findAll().stream()
                 .map(this::convertToDTO)
                 .collect(Collectors.toList());
     }
 
-    // Get Task by ID
     public TaskDTO getTaskById(UUID taskId) {
         return taskRepository.findById(taskId)
                 .map(this::convertToDTO)
                 .orElse(null);
     }
 
-    // Update Task
+  
     public TaskDTO updateTask(UUID taskId, TaskDTO updatedTaskDTO) {
         Optional<Task> taskOptional = taskRepository.findById(taskId);
         if (taskOptional.isPresent()) {
@@ -72,7 +69,7 @@ public class TaskService {
         return null;
     }
 
-    // Delete Task
+
     public boolean deleteTask(UUID taskId) {
         if (taskRepository.existsById(taskId)) {
             taskRepository.deleteById(taskId);
@@ -81,7 +78,6 @@ public class TaskService {
         return false;
     }
 
-    // Convert Entity to DTO
     private TaskDTO convertToDTO(Task task) {
         TaskDTO dto = new TaskDTO();
         dto.setTaskId(task.getTaskId());

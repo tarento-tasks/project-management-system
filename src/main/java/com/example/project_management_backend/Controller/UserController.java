@@ -7,13 +7,16 @@ import com.example.project_management_backend.Service.RoleService;
 import com.example.project_management_backend.Service.UserService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
 import java.util.List;
 import java.util.Optional;
+
 import java.util.UUID;
+
 
 @RestController
 @RequestMapping("/api/users")
@@ -23,7 +26,7 @@ public class UserController {
     private UserService userService;
 
     @Autowired
-    private RoleService roleService; // ✅ Inject RoleService
+    private RoleService roleService; 
 
     @GetMapping
     public List<UserDTO> getAllUsers() {
@@ -41,44 +44,47 @@ public class UserController {
     }
 
     @PostMapping(consumes = "multipart/form-data")
-    public User createUser(
-            @RequestParam String email,
-            @RequestParam String password,
-            @RequestParam String name,
-            @RequestParam(required = false) String dob,
-            @RequestParam(required = false) MultipartFile image,
-            @RequestParam(required = false) String previousWork,
-            @RequestParam(required = false) String qualifications,
-            @RequestParam UUID role_id  // ✅ Expect UUID for role
-    ) {
-        User user = new User();
-        user.setEmail(email);
-        user.setPassword(password);
-        user.setName(name);
-        user.setDob(dob);
-        user.setPreviousWork(previousWork);
-        user.setQualifications(qualifications);
+public User createUser(
+        @RequestParam String email,
+        @RequestParam String password, // ✅ Plain-text password (will be hashed)
+        @RequestParam String name,
+        @RequestParam(required = false) String dob,
+        @RequestParam(required = false) MultipartFile image,
+        @RequestParam(required = false) String previousWork,
+        @RequestParam(required = false) String qualifications,
+        @RequestParam UUID role_id  
+) {
+    User user = new User();
+    user.setEmail(email);
 
-        // ✅ Fetch Role entity using role_id
-        Optional<Role> role = roleService.getRoleById(role_id)
-                .map(roleDTO -> new Role(roleDTO.getRoleId(), roleDTO.getRoleName()));
+  
+    String hashedPassword = new BCryptPasswordEncoder().encode(password);
+    user.setPassword(hashedPassword);
 
-        if (role.isPresent()) {
-            user.setRole(role.get()); // ✅ Assign Role object to User
-        } else {
-            throw new RuntimeException("Invalid Role ID: " + role_id);
-        }
+    user.setName(name);
+    user.setDob(dob);
+    user.setPreviousWork(previousWork);
+    user.setQualifications(qualifications);
 
-        try {
-            if (image != null && !image.isEmpty()) {
-                user.setImages(image.getBytes()); // ✅ Store image as BLOB
-            }
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
+    Optional<Role> role = roleService.getRoleById(role_id)
+            .map(roleDTO -> new Role(roleDTO.getRoleId(), roleDTO.getRoleName()));
 
-        return userService.saveUser(user);
+    if (role.isPresent()) {
+        user.setRole(role.get()); 
+    } else {
+        throw new RuntimeException("Invalid Role ID: " + role_id);
     }
+
+    try {
+        if (image != null && !image.isEmpty()) {
+            user.setImages(image.getBytes()); 
+        }
+    } catch (IOException e) {
+        e.printStackTrace();
+    }
+
+    return userService.saveUser(user);
+}
 
     @PutMapping("/{id}")
 public ResponseEntity<UserDTO> updateUser(
@@ -91,7 +97,7 @@ public ResponseEntity<UserDTO> updateUser(
         @RequestParam(required = false) String qualifications,
         @RequestParam(required = false) UUID role_id
 ) {
-    Optional<User> optionalUser = userService.getUserEntityById(id); // ✅ FIXED!
+    Optional<User> optionalUser = userService.getUserEntityById(id); 
     if (optionalUser.isEmpty()) {
         return ResponseEntity.notFound().build();
     }

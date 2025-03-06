@@ -22,7 +22,6 @@ public class ProjectService {
     @Autowired
     private UserRepository userRepository;
 
-    // Convert Entity to DTO
     private ProjectDTO convertToDTO(Project project) {
         ProjectDTO dto = new ProjectDTO();
         dto.setProjectId(project.getProjectId());
@@ -38,18 +37,17 @@ public class ProjectService {
         return dto;
     }
 
-    // Get All Projects
+
     public List<ProjectDTO> getAllProjects() {
         List<Project> projects = projectRepository.findAll();
         return projects.stream().map(this::convertToDTO).collect(Collectors.toList());
     }
 
-    // Get Project by ID
     public Optional<ProjectDTO> getProjectById(UUID id) {
         return projectRepository.findById(id).map(this::convertToDTO);
     }
 
-    // Create Project
+ 
     public ProjectDTO createProject(ProjectDTO projectDTO) {
         Optional<User> mentorOpt = userRepository.findById(projectDTO.getMentorId());
         if (mentorOpt.isEmpty()) {

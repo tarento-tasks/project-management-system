@@ -16,5 +16,6 @@ public class ProjectDTO {
     private String repo;
     private LocalDate lastDate;
     private boolean openStatus;
-    private UUID mentorId; // Storing mentor ID instead of full User object
+    private UUID mentorId; 
 }
+

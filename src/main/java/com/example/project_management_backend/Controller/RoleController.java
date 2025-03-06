@@ -1,5 +1,5 @@
 package com.example.project_management_backend.Controller;
-
+import org.springframework.dao.DataIntegrityViolationException;
 import com.example.project_management_backend.DTO.RoleDTO;
 import com.example.project_management_backend.Model.Role;
 import com.example.project_management_backend.Service.RoleService;
@@ -35,10 +35,18 @@ public class RoleController {
         return role.map(ResponseEntity::ok).orElseGet(() -> ResponseEntity.notFound().build());
     }
 
-    @PostMapping
-    public ResponseEntity<Role> createRole(@RequestBody Role role) {
-        return ResponseEntity.ok(roleService.saveRole(role));
+  
+   
+
+@PostMapping
+public ResponseEntity<?> createRole(@RequestBody Role role) {
+    try {
+        Role savedRole = roleService.saveRole(role);
+        return ResponseEntity.ok(savedRole);
+    } catch (DataIntegrityViolationException e) {
+        return ResponseEntity.badRequest().body("Role name already exists");
     }
+}
 
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> deleteRole(@PathVariable UUID id) {

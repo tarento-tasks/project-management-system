@@ -22,7 +22,7 @@ public class Task {
     private String taskName;
 
     @Lob
-    @Column(columnDefinition = "BYTEA") // PostgreSQL does not support BLOB, use BYTEA
+    @Column(columnDefinition = "BYTEA") 
     private byte[] attachments;
 
     @Column(nullable = false, updatable = false)
@@ -38,6 +38,6 @@ public class Task {
     @Column(length = 500)
     private String taskObjective;
 
-    private UUID modifiedBy; // Stores the ID of the user who modified the task
+    private UUID modifiedBy; 
 
 }

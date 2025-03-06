@@ -26,10 +26,10 @@ public class User {
     private String password;
 
     private String name;
-    private String dob; // Date of Birth (Can be stored as String or LocalDate)
+    private String dob; 
 
     @Lob
-    private byte[] images; // Stores image as a BLOB
+    private byte[] images;
 
     @Column(nullable = false, updatable = false)
     private LocalDateTime createdAt = LocalDateTime.now();
@@ -44,9 +44,8 @@ public class User {
 
     @ManyToOne
     @JoinColumn(name = "role_id", nullable = false)
-    private Role role; // Foreign key reference to Role entity
+    private Role role; 
 
-    // Default Constructor
 
 
 }

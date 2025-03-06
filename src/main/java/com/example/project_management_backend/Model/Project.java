@@ -30,13 +30,13 @@ public class Project {
     private String description;
 
     @Column(nullable = false)
-    private LocalDate dueDate; // Project completion deadline
+    private LocalDate dueDate; 
 
     @Column(nullable = false)
-    private String criteria; // Qualification criteria
+    private String criteria; 
 
     @Column(nullable = false)
-    private String repo; // Repository link
+    private String repo; 
 
     @Column(nullable = false, updatable = false)
     private LocalDateTime createdAt = LocalDateTime.now();
@@ -44,15 +44,15 @@ public class Project {
     private LocalDateTime modifiedAt;
 
     @Column(nullable = false)
-    private LocalDate lastDate; // Last date to apply
+    private LocalDate lastDate; 
 
     @Column(nullable = false)
-    private boolean openStatus; // true = Open, false = Closed
+    private boolean openStatus;
 
     private LocalDateTime deletedAt;
 
     @ManyToOne
     @JoinColumn(name = "mentor_id", nullable = false)
-    private User mentor; // Assigned mentor (Foreign Key to User Table)
+    private User mentor; 
 
 }

@@ -17,33 +17,33 @@ public class ProjectController {
     @Autowired
     private ProjectService projectService;
 
-    // Get All Projects
+    
     @GetMapping
     public ResponseEntity<List<ProjectDTO>> getAllProjects() {
         return ResponseEntity.ok(projectService.getAllProjects());
     }
 
-    // Get Project by ID
+    
     @GetMapping("/{id}")
     public ResponseEntity<ProjectDTO> getProjectById(@PathVariable UUID id) {
         Optional<ProjectDTO> project = projectService.getProjectById(id);
         return project.map(ResponseEntity::ok).orElseGet(() -> ResponseEntity.notFound().build());
     }
 
-    // Create Project
+    
     @PostMapping
     public ResponseEntity<ProjectDTO> createProject(@RequestBody ProjectDTO projectDTO) {
         return ResponseEntity.ok(projectService.createProject(projectDTO));
     }
 
-    // Update Project
+  
     @PutMapping("/{id}")
     public ResponseEntity<ProjectDTO> updateProject(@PathVariable UUID id, @RequestBody ProjectDTO projectDTO) {
         Optional<ProjectDTO> updatedProject = projectService.updateProject(id, projectDTO);
         return updatedProject.map(ResponseEntity::ok).orElseGet(() -> ResponseEntity.notFound().build());
     }
 
-    // Delete Project
+    
     @DeleteMapping("/{id}")
     public ResponseEntity<String> deleteProject(@PathVariable UUID id) {
         if (projectService.deleteProject(id)) {
