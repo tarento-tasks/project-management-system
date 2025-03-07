@@ -1,8 +1,8 @@
 package com.example.project_management_backend.Service;
 
-import com.example.project_management_backend.Model.Skill;
+
 import com.example.project_management_backend.Model.SkillMapping;
-import com.example.project_management_backend.Model.User;
+
 import com.example.project_management_backend.Model.SkillMappingId;
 import com.example.project_management_backend.DTO.SkillMappingRequest;
 import com.example.project_management_backend.Repository.SkillMappingRepository;
@@ -14,7 +14,7 @@ import jakarta.transaction.Transactional;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
-import java.util.Optional;
+
 import java.util.UUID;
 import java.util.stream.Collectors;
 

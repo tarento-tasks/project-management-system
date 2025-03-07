@@ -43,12 +43,12 @@ public class ProjectController {
         return updatedProject.map(ResponseEntity::ok).orElseGet(() -> ResponseEntity.notFound().build());
     }
 
-    // Delete Project
     @DeleteMapping("/{id}")
     public ResponseEntity<String> deleteProject(@PathVariable UUID id) {
-        if (projectService.deleteProject(id)) {
-            return ResponseEntity.ok("Project deleted successfully");
-        }
-        return ResponseEntity.notFound().build();
+    if (projectService.deleteProject(id)) {
+        return ResponseEntity.ok("Project deleted successfully");
     }
+    return ResponseEntity.notFound().build();
+}
+
 }

@@ -7,7 +7,8 @@ import com.example.project_management_backend.Repository.ProjectRepository;
 import com.example.project_management_backend.Repository.UserRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
-
+import jakarta.transaction.Transactional;
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
@@ -37,19 +38,20 @@ public class ProjectService {
         dto.setMentorId(project.getMentor().getUserId());
         return dto;
     }
-
-    // Get All Projects
+    @Transactional
     public List<ProjectDTO> getAllProjects() {
-        List<Project> projects = projectRepository.findAll();
+        List<Project> projects = projectRepository.findByDeletedAtIsNull();
         return projects.stream().map(this::convertToDTO).collect(Collectors.toList());
     }
-
-    // Get Project by ID
+    
+    @Transactional
     public Optional<ProjectDTO> getProjectById(UUID id) {
-        return projectRepository.findById(id).map(this::convertToDTO);
+        return projectRepository.findByProjectIdAndDeletedAtIsNull(id)
+                .map(this::convertToDTO);
     }
+    
 
-    // Create Project
+   
     public ProjectDTO createProject(ProjectDTO projectDTO) {
         Optional<User> mentorOpt = userRepository.findById(projectDTO.getMentorId());
         if (mentorOpt.isEmpty()) {
@@ -91,11 +93,16 @@ public class ProjectService {
         return Optional.empty();
     }
 
-    // Delete Project
+    @Transactional
     public boolean deleteProject(UUID id) {
-        if (projectRepository.existsById(id)) {
-            projectRepository.deleteById(id);
-            return true;
+        Optional<Project> projectOpt = projectRepository.findById(id);
+        if (projectOpt.isPresent()) {
+            Project project = projectOpt.get();
+            if (project.getDeletedAt() == null) {  // Check if not already deleted
+                project.setDeletedAt(LocalDateTime.now()); // Soft delete by setting timestamp
+                projectRepository.save(project);
+                return true;
+            }
         }
         return false;
     }
