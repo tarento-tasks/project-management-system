@@ -3,6 +3,7 @@ package com.example.project_management_backend.DTO;
 import lombok.Data;
 import java.time.LocalDateTime;
 import java.util.UUID;
+import org.springframework.web.multipart.MultipartFile;
 
 @Data
 public class TaskDTO {
@@ -17,4 +18,7 @@ public class TaskDTO {
     private String openStatus;
     private LocalDateTime deletedAt;
     private String taskObjective;
+    private UUID modifiedBy;
+
+    private UUID projectId; // ✅ Add project ID to DTO
 }

@@ -22,8 +22,9 @@ public class Task {
     private String taskName;
 
     @Lob
-    @Column(columnDefinition = "BYTEA") // PostgreSQL does not support BLOB, use BYTEA
+    @Column(name = "attachments", columnDefinition = "BYTEA")
     private byte[] attachments;
+
 
     @Column(nullable = false, updatable = false)
     private LocalDateTime createdAt = LocalDateTime.now();
@@ -40,4 +41,8 @@ public class Task {
 
     private UUID modifiedBy; // Stores the ID of the user who modified the task
 
+    // ✅ Add Many-to-One Relationship with Project
+    @ManyToOne
+    @JoinColumn(name = "project_id", nullable = false)
+    private Project project; // Foreign key reference to Project
 }
