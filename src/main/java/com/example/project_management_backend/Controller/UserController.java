@@ -6,8 +6,10 @@ import com.example.project_management_backend.Model.User;
 import com.example.project_management_backend.Service.RoleService;
 import com.example.project_management_backend.Service.UserService;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.annotation.Bean;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -17,16 +19,20 @@ import java.util.Optional;
 
 import java.util.UUID;
 
-
 @RestController
 @RequestMapping("/api/users")
 public class UserController {
+
+ 
+
+    @Autowired
+    private PasswordEncoder passwordEncoder;
 
     @Autowired
     private UserService userService;
 
     @Autowired
-    private RoleService roleService; 
+    private RoleService roleService;
 
     @GetMapping
     public List<UserDTO> getAllUsers() {
@@ -44,96 +50,95 @@ public class UserController {
     }
 
     @PostMapping(consumes = "multipart/form-data")
-public User createUser(
-        @RequestParam String email,
-        @RequestParam String password, // ✅ Plain-text password (will be hashed)
-        @RequestParam String name,
-        @RequestParam(required = false) String dob,
-        @RequestParam(required = false) MultipartFile image,
-        @RequestParam(required = false) String previousWork,
-        @RequestParam(required = false) String qualifications,
-        @RequestParam UUID role_id  
-) {
-    User user = new User();
-    user.setEmail(email);
+    public User createUser(
+            @RequestParam String email,
+            @RequestParam String password, 
+            @RequestParam String name,
+            @RequestParam(required = false) String dob,
+            @RequestParam(required = false) MultipartFile image,
+            @RequestParam(required = false) String previousWork,
+            @RequestParam(required = false) String qualifications,
+            @RequestParam UUID role_id) {
+        User user = new User();
+        user.setEmail(email);
 
-  
-    String hashedPassword = new BCryptPasswordEncoder().encode(password);
-    user.setPassword(hashedPassword);
+        String hashedPassword = passwordEncoder.encode(password);
+        user.setPassword(hashedPassword);
 
-    user.setName(name);
-    user.setDob(dob);
-    user.setPreviousWork(previousWork);
-    user.setQualifications(qualifications);
+        user.setName(name);
+        user.setDob(dob);
+        user.setPreviousWork(previousWork);
+        user.setQualifications(qualifications);
 
-    Optional<Role> role = roleService.getRoleById(role_id)
-            .map(roleDTO -> new Role(roleDTO.getRoleId(), roleDTO.getRoleName()));
-
-    if (role.isPresent()) {
-        user.setRole(role.get()); 
-    } else {
-        throw new RuntimeException("Invalid Role ID: " + role_id);
-    }
-
-    try {
-        if (image != null && !image.isEmpty()) {
-            user.setImages(image.getBytes()); 
-        }
-    } catch (IOException e) {
-        e.printStackTrace();
-    }
-
-    return userService.saveUser(user);
-}
-
-    @PutMapping("/{id}")
-public ResponseEntity<UserDTO> updateUser(
-        @PathVariable UUID id,
-        @RequestParam(required = false) String email,
-        @RequestParam(required = false) String name,
-        @RequestParam(required = false) String dob,
-        @RequestParam(required = false) MultipartFile image,
-        @RequestParam(required = false) String previousWork,
-        @RequestParam(required = false) String qualifications,
-        @RequestParam(required = false) UUID role_id
-) {
-    Optional<User> optionalUser = userService.getUserEntityById(id); 
-    if (optionalUser.isEmpty()) {
-        return ResponseEntity.notFound().build();
-    }
-
-    User user = optionalUser.get();
-    if (email != null) user.setEmail(email);
-    if (name != null) user.setName(name);
-    if (dob != null) user.setDob(dob);
-    if (previousWork != null) user.setPreviousWork(previousWork);
-    if (qualifications != null) user.setQualifications(qualifications);
-
-    if (role_id != null) {
         Optional<Role> role = roleService.getRoleById(role_id)
                 .map(roleDTO -> new Role(roleDTO.getRoleId(), roleDTO.getRoleName()));
-        role.ifPresent(user::setRole);
-    }
 
-    try {
-        if (image != null && !image.isEmpty()) {
-            user.setImages(image.getBytes());
+        if (role.isPresent()) {
+            user.setRole(role.get());
+        } else {
+            throw new RuntimeException("Invalid Role ID: " + role_id);
         }
-    } catch (IOException e) {
-        e.printStackTrace();
+
+        try {
+            if (image != null && !image.isEmpty()) {
+                user.setImages(image.getBytes());
+            }
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+
+        return userService.saveUser(user);
     }
 
-    User updatedUser = userService.saveUser(user);
-    UserDTO updatedUserDTO = userService.convertToDTO(updatedUser);
-    
-    return ResponseEntity.ok(updatedUserDTO);
-}
+    @PutMapping("/{id}")
+    public ResponseEntity<UserDTO> updateUser(
+            @PathVariable UUID id,
+            @RequestParam(required = false) String email,
+            @RequestParam(required = false) String name,
+            @RequestParam(required = false) String dob,
+            @RequestParam(required = false) MultipartFile image,
+            @RequestParam(required = false) String previousWork,
+            @RequestParam(required = false) String qualifications,
+            @RequestParam(required = false) UUID role_id) {
+        Optional<User> optionalUser = userService.getUserEntityById(id);
+        if (optionalUser.isEmpty()) {
+            return ResponseEntity.notFound().build();
+        }
 
+        User user = optionalUser.get();
+        if (email != null)
+            user.setEmail(email);
+        if (name != null)
+            user.setName(name);
+        if (dob != null)
+            user.setDob(dob);
+        if (previousWork != null)
+            user.setPreviousWork(previousWork);
+        if (qualifications != null)
+            user.setQualifications(qualifications);
 
+        if (role_id != null) {
+            Optional<Role> role = roleService.getRoleById(role_id)
+                    .map(roleDTO -> new Role(roleDTO.getRoleId(), roleDTO.getRoleName()));
+            role.ifPresent(user::setRole);
+        }
 
+        try {
+            if (image != null && !image.isEmpty()) {
+                user.setImages(image.getBytes());
+            }
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+
+        User updatedUser = userService.saveUser(user);
+        UserDTO updatedUserDTO = userService.convertToDTO(updatedUser);
+
+        return ResponseEntity.ok(updatedUserDTO);
+    }
 
     @DeleteMapping("/{id}")
     public void deleteUser(@PathVariable UUID id) {
         userService.deleteUser(id);
     }
-}
+} 
