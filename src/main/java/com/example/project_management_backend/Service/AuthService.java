@@ -35,26 +35,20 @@ public class AuthService {
         this.jwtUtil = jwtUtil;
     }
 
-    public User signup(UserSignupDto signupDto, User loggedInUser) {
-        User user = new User();
-        user.setEmail(signupDto.getEmail());
-        user.setPassword(passwordEncoder.encode(signupDto.getPassword()));
-        user.setName(signupDto.getName());
-        user.setRole(loggedInUser.getRole());
-        return userRepository.save(user);
-    }
+    
     
   
 
     public LoginResponse login(LoginRequest loginRequest) {
 
         User user = userRepository.findByEmail(loginRequest.getEmail()).orElseThrow(() -> new RuntimeException("User not found"));
-
+        System.out.println("Entered password:" + loginRequest.getPassword());
+        System.out.println("Stored Hashed Password: " + user.getPassword());
     
         if (!passwordEncoder.matches(loginRequest.getPassword(), user.getPassword())) {
-            throw new RuntimeException("Invalid password");
+            throw new RuntimeException("Invalid password");    
         }
-
+        
         String token = jwtUtil.generateToken(user);
 
         LoginResponse loginResponse = new LoginResponse();
@@ -62,6 +56,7 @@ public class AuthService {
         return loginResponse;
         
     }
+
 
 
 } 
