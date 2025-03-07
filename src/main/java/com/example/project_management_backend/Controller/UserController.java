@@ -51,6 +51,9 @@ public class UserController {
             @RequestParam(required = false) String qualifications,
             @RequestParam UUID role_id  // ✅ Expect UUID for role
     ) {
+
+        System.out.println("Received image: " + (image != null ? image.getOriginalFilename() : "No image"));
+        
         User user = new User();
         user.setEmail(email);
         user.setPassword(password);

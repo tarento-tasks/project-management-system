@@ -16,12 +16,12 @@ public class UserDTO {
     private String dob;
     private String previousWork;
     private String qualifications;
-    private UUID roleId; // Store only the ID instead of the entire object
+    private UUID roleId; 
     private LocalDateTime createdAt;
     private LocalDateTime modifiedAt;
     private LocalDateTime deletedAt;
-    private String imageBase64; // ✅ Image as Base64 string
+    private String imageBase64; 
 
-    // ✅ Explicitly define the constructor to match `convertToDTO()`
+    
 
 }

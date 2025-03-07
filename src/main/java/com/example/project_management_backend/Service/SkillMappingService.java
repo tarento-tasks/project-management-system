@@ -3,50 +3,55 @@ package com.example.project_management_backend.Service;
 import com.example.project_management_backend.Model.Skill;
 import com.example.project_management_backend.Model.SkillMapping;
 import com.example.project_management_backend.Model.User;
+import com.example.project_management_backend.Model.SkillMappingId;
+import com.example.project_management_backend.DTO.SkillMappingRequest;
 import com.example.project_management_backend.Repository.SkillMappingRepository;
 import com.example.project_management_backend.Repository.SkillRepository;
 import com.example.project_management_backend.Repository.UserRepository;
-import org.springframework.beans.factory.annotation.Autowired;
+
+import jakarta.transaction.Transactional;
+
 import org.springframework.stereotype.Service;
 
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
+import java.util.stream.Collectors;
 
 @Service
 public class SkillMappingService {
 
-    @Autowired
-    private SkillMappingRepository skillMappingRepository;
+    private final SkillMappingRepository skillMappingRepository;
+    private final UserRepository userRepository;
+    private final SkillRepository skillRepository;
 
-    @Autowired
-    private SkillRepository skillRepository;
-
-    @Autowired
-    private UserRepository userRepository;
-
-    public List<SkillMapping> getAllSkillMappings() {
-        return skillMappingRepository.findAll();
-    }
-
-    public List<SkillMapping> getSkillsByUserId(UUID userId) {
-        return skillMappingRepository.findByUserId(userId);
+    public SkillMappingService(SkillMappingRepository skillMappingRepository, UserRepository userRepository, SkillRepository skillRepository) {
+        this.skillMappingRepository = skillMappingRepository;
+        this.userRepository = userRepository;
+        this.skillRepository = skillRepository;
     }
 
     public SkillMapping addSkillToUser(UUID userId, UUID skillId) {
-        Optional<User> userOpt = userRepository.findById(userId);
-        Optional<Skill> skillOpt = skillRepository.findById(skillId);
-
-        if (userOpt.isPresent() && skillOpt.isPresent()) {
-            SkillMapping skillMapping = new SkillMapping();
-            skillMapping.setUser(userOpt.get());
-            skillMapping.setSkill(skillOpt.get());
-            return skillMappingRepository.save(skillMapping);
-        }
-        return null;
+        SkillMapping skillMapping = SkillMapping.builder()
+                .id(new SkillMappingId(userId, skillId))
+                .user(userRepository.findById(userId).orElseThrow(() -> new RuntimeException("User not found")))
+                .skill(skillRepository.findById(skillId).orElseThrow(() -> new RuntimeException("Skill not found")))
+                .build();
+    
+        return skillMappingRepository.save(skillMapping);
+    }
+    
+    @Transactional
+    public List<SkillMappingRequest> getSkillMappingsByUserId(UUID userId) {
+        return skillMappingRepository.findByUser_UserId(userId).stream()
+                .map(mapping -> new SkillMappingRequest(mapping.getUser().getUserId(), mapping.getSkill().getSkillId()))
+                .collect(Collectors.toList());
     }
 
-    public void removeSkillFromUser(UUID mappingId) {
-        skillMappingRepository.deleteById(mappingId);
+    @Transactional
+    public List<SkillMappingRequest> getSkillMappingsBySkillId(UUID skillId) {
+        return skillMappingRepository.findBySkill_SkillId(skillId).stream()
+                .map(mapping -> new SkillMappingRequest(mapping.getUser().getUserId(), mapping.getSkill().getSkillId()))
+                .collect(Collectors.toList());
     }
 }

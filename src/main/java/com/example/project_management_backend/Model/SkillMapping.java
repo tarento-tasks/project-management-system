@@ -3,25 +3,25 @@ package com.example.project_management_backend.Model;
 import jakarta.persistence.*;
 import lombok.*;
 
-import java.util.UUID;
-
 @Entity
 @Table(name = "skill_mapping")
-@Data
+@Getter
+@Setter
 @NoArgsConstructor
 @AllArgsConstructor
+@Builder
 public class SkillMapping {
 
-    @Id
-    @GeneratedValue(strategy = GenerationType.UUID)
-    @Column(name = "id", updatable = false, nullable = false)
-    private UUID id;
+    @EmbeddedId
+    private SkillMappingId id;
 
     @ManyToOne
+    @MapsId("userId")
     @JoinColumn(name = "user_id", nullable = false)
     private User user;
 
     @ManyToOne
+    @MapsId("skillId")
     @JoinColumn(name = "skill_id", nullable = false)
     private Skill skill;
 }

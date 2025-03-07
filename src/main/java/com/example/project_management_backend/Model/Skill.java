@@ -8,6 +8,9 @@ import lombok.NoArgsConstructor;
 import java.util.Set;
 import java.util.UUID;
 
+import org.hibernate.annotations.JdbcTypeCode;
+import org.hibernate.type.SqlTypes;
+
 @Entity
 @Table(name = "skills")
 @Data
@@ -16,8 +19,9 @@ import java.util.UUID;
 public class Skill {
 
     @Id
-    @GeneratedValue(strategy = GenerationType.UUID) // Auto-generate UUID
-    @Column(name = "skill_id", updatable = false, nullable = false)
+    @GeneratedValue(strategy = GenerationType.AUTO) // Auto-generate UUID
+    @JdbcTypeCode(SqlTypes.UUID)
+    @Column(name = "skill_id",columnDefinition = "UUID",  nullable = false)
     private UUID skillId;
 
     @Column(name = "skill_name", nullable = false, unique = true)

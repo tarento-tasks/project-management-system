@@ -1,7 +1,10 @@
 package com.example.project_management_backend.Controller;
+
+import com.example.project_management_backend.DTO.SkillMappingRequest;
 import com.example.project_management_backend.Model.SkillMapping;
 import com.example.project_management_backend.Service.SkillMappingService;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -15,25 +18,33 @@ public class SkillMappingController {
     @Autowired
     private SkillMappingService skillMappingService;
 
-    @GetMapping
-    public List<SkillMapping> getAllSkillMappings() {
-        return skillMappingService.getAllSkillMappings();
-    }
-
+   
     @GetMapping("/user/{userId}")
-    public ResponseEntity<List<SkillMapping>> getSkillsByUserId(@PathVariable UUID userId) {
-        return ResponseEntity.ok(skillMappingService.getSkillsByUserId(userId));
+    public ResponseEntity<List<SkillMappingRequest>> getSkillMappingsByUserId(@PathVariable UUID userId) {
+        return ResponseEntity.ok(skillMappingService.getSkillMappingsByUserId(userId));
     }
 
-    @PostMapping("/add")
-    public ResponseEntity<SkillMapping> addSkillToUser(@RequestParam UUID userId, @RequestParam UUID skillId) {
-        SkillMapping skillMapping = skillMappingService.addSkillToUser(userId, skillId);
-        return (skillMapping != null) ? ResponseEntity.ok(skillMapping) : ResponseEntity.badRequest().build();
+    @GetMapping("/skill/{skillId}")
+    public ResponseEntity<List<SkillMappingRequest>> getSkillMappingsBySkillId(@PathVariable UUID skillId) {
+        return ResponseEntity.ok(skillMappingService.getSkillMappingsBySkillId(skillId));
     }
+   
+    @PostMapping
+public ResponseEntity<SkillMappingRequest> addSkillToUser(@RequestBody SkillMappingRequest request) {
+    SkillMapping skillMapping = skillMappingService.addSkillToUser(request.getUserId(), request.getSkillId());
+    
+    SkillMappingRequest response = new SkillMappingRequest(
+        skillMapping.getId().getUserId(),
+        skillMapping.getId().getSkillId()
+    );
+    
+    return ResponseEntity.status(HttpStatus.CREATED).body(response);
+}
 
-    @DeleteMapping("/{mappingId}")
-    public ResponseEntity<Void> removeSkillFromUser(@PathVariable UUID mappingId) {
-        skillMappingService.removeSkillFromUser(mappingId);
-        return ResponseEntity.noContent().build();
-    }
+
+
+
+    
+  
+    
 }
