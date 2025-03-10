@@ -33,10 +33,12 @@ public class SecurityConfig {
                    
                         .requestMatchers("/api/roles/**").hasRole("ADMIN") 
                   
-                        .requestMatchers("/api/users/**").hasRole("ADMIN") 
+                        .requestMatchers("/api/users/**").permitAll() 
                         
                         .requestMatchers("/api/projects/**").hasAnyRole("ADMIN", "MENTOR") 
                         .requestMatchers("/api/tasks/**").hasAnyRole("ADMIN", "MENTOR") 
+                        .requestMatchers("/api/skills/**").hasRole("ADMIN") 
+                        .requestMatchers("/api/skill-mapping/**").permitAll() 
                         .anyRequest().authenticated()
                 )
                 .addFilterBefore(new JWTFilter(jwtUtil), UsernamePasswordAuthenticationFilter.class); 

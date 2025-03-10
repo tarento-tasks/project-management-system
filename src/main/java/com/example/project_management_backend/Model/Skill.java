@@ -19,7 +19,7 @@ import org.hibernate.type.SqlTypes;
 public class Skill {
 
     @Id
-    @GeneratedValue(strategy = GenerationType.AUTO) // Auto-generate UUID
+    @GeneratedValue(strategy = GenerationType.AUTO) 
     @JdbcTypeCode(SqlTypes.UUID)
     @Column(name = "skill_id",columnDefinition = "UUID",  nullable = false)
     private UUID skillId;
