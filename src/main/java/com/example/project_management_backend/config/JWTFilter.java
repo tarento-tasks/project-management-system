@@ -1,7 +1,7 @@
 package com.example.project_management_backend.config;
 
 import io.jsonwebtoken.Claims;
-import io.jsonwebtoken.Jwts;
+
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.context.SecurityContextHolder;

@@ -1,13 +1,18 @@
 package com.example.project_management_backend.Service;
-
 import com.example.project_management_backend.DTO.UserDTO;
 import com.example.project_management_backend.Model.Role;
 import com.example.project_management_backend.Model.User;
 import com.example.project_management_backend.Repository.UserRepository;
+
+import jakarta.transaction.Transactional;
+
+import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
+import java.time.LocalDateTime;
 import java.util.Base64;
 import java.util.List;
 import java.util.Optional;
@@ -19,6 +24,7 @@ public class UserService {
 
     private final UserRepository userRepository;
     private final RoleService roleService;
+    private final PasswordEncoder passwordEncoder = new BCryptPasswordEncoder();
 
     public UserService(UserRepository userRepository, RoleService roleService) {
         this.userRepository = userRepository;
@@ -37,37 +43,36 @@ public class UserService {
         );
     }
 
+    @Transactional
     public List<UserDTO> getAllUsers() {
-        return userRepository.findAll()
-                .stream()
-                .map(this::convertToDTO)
-                .collect(Collectors.toList());
+        List<User> projects = userRepository.findByDeletedAtIsNull();
+        return projects.stream().map(this::convertToDTO).collect(Collectors.toList());
     }
 
     /*public Optional<UserDTO> getUserById(UUID id) {
         return userRepository.findById(id).map(this::convertToDTO); // ✅ Convert User -> UserDTO
     }*/
     public Optional<User> getUserEntityById(UUID id) {
-        return userRepository.findById(id); // ✅ This returns Optional<User>
+        return userRepository.findById(id); 
     }
 
+    
+    @Transactional
     public Optional<UserDTO> getUserById(UUID id) {
-        return userRepository.findById(id).map(this::convertToDTO); // ✅ Converts User -> UserDTO
-    }
+        return userRepository.findByUserIdAndDeletedAtIsNull(id)
+                .map(this::convertToDTO);
+    }    
     
-    
-    
-    
-
     public Optional<UserDTO> getUserByEmail(String email) {
-        return userRepository.findByEmail(email).map(this::convertToDTO);
+        return userRepository.findByEmailAndDeletedAtIsNull(email)
+                .map(this::convertToDTO);
     }
 
     public User saveUser(User user) {
         return userRepository.save(user);
     }
 
-    public User updateUser(UUID id, String email, String name, String dob, String previousWork, String qualifications, UUID roleId, MultipartFile image) {
+    public User updateUser(UUID id, String email, String name, String dob, String previousWork, String qualifications, UUID roleId, MultipartFile image,  String password) {
         Optional<User> optionalUser = userRepository.findById(id);
         if (optionalUser.isPresent()) {
             User user = optionalUser.get();
@@ -77,6 +82,11 @@ public class UserService {
             user.setPreviousWork(previousWork);
             user.setQualifications(qualifications);
             
+
+            if (password != null && !password.isEmpty()) {
+                user.setPassword(passwordEncoder.encode(password));
+            }
+
             if (roleId != null) {
                 Optional<Role> role = roleService.getRoleById(roleId).map(roleDTO -> new Role(roleDTO.getRoleId(), roleDTO.getRoleName()));
                 role.ifPresent(user::setRole);
@@ -96,7 +106,17 @@ public class UserService {
         }
     }
 
-    public void deleteUser(UUID id) {
-        userRepository.deleteById(id);
+    public boolean deleteUser(UUID id) {
+        Optional<User> userOpt = userRepository.findById(id);
+        if (userOpt.isPresent()) {
+            User user = userOpt.get();
+            if (user.getDeletedAt() == null) {  
+                user.setDeletedAt(LocalDateTime.now()); 
+                userRepository.save(user);
+                return true;
+            }
+        }
+        return false;
+        
     }
 }

@@ -6,6 +6,7 @@ import com.example.project_management_backend.Model.User;
 import com.example.project_management_backend.Service.RoleService;
 import com.example.project_management_backend.Service.UserService;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
@@ -20,10 +21,13 @@ import java.util.UUID;
 public class UserController {
 
     @Autowired
+    private PasswordEncoder passwordEncoder;
+
+    @Autowired
     private UserService userService;
 
     @Autowired
-    private RoleService roleService; // ✅ Inject RoleService
+    private RoleService roleService; 
 
     @GetMapping
     public List<UserDTO> getAllUsers() {
@@ -49,32 +53,35 @@ public class UserController {
             @RequestParam(required = false) MultipartFile image,
             @RequestParam(required = false) String previousWork,
             @RequestParam(required = false) String qualifications,
-            @RequestParam UUID role_id  // ✅ Expect UUID for role
+            @RequestParam UUID role_id  
     ) {
 
         System.out.println("Received image: " + (image != null ? image.getOriginalFilename() : "No image"));
         
         User user = new User();
         user.setEmail(email);
-        user.setPassword(password);
+
+        String hashedPassword = passwordEncoder.encode(password);
+        user.setPassword(hashedPassword);
+
         user.setName(name);
         user.setDob(dob);
         user.setPreviousWork(previousWork);
         user.setQualifications(qualifications);
 
-        // ✅ Fetch Role entity using role_id
+        
         Optional<Role> role = roleService.getRoleById(role_id)
                 .map(roleDTO -> new Role(roleDTO.getRoleId(), roleDTO.getRoleName()));
 
         if (role.isPresent()) {
-            user.setRole(role.get()); // ✅ Assign Role object to User
+            user.setRole(role.get()); 
         } else {
             throw new RuntimeException("Invalid Role ID: " + role_id);
         }
 
         try {
             if (image != null && !image.isEmpty()) {
-                user.setImages(image.getBytes()); // ✅ Store image as BLOB
+                user.setImages(image.getBytes()); 
             }
         } catch (IOException e) {
             e.printStackTrace();
@@ -94,7 +101,7 @@ public ResponseEntity<UserDTO> updateUser(
         @RequestParam(required = false) String qualifications,
         @RequestParam(required = false) UUID role_id
 ) {
-    Optional<User> optionalUser = userService.getUserEntityById(id); // ✅ FIXED!
+    Optional<User> optionalUser = userService.getUserEntityById(id); 
     if (optionalUser.isEmpty()) {
         return ResponseEntity.notFound().build();
     }

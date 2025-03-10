@@ -1,9 +1,7 @@
 
 package com.example.project_management_backend.Model;
 import jakarta.persistence.*;
-import lombok.AllArgsConstructor;
-import lombok.Data;
-import lombok.NoArgsConstructor;
+import lombok.*;
 
 import java.util.Set;
 import java.util.UUID;
@@ -19,7 +17,7 @@ import org.hibernate.type.SqlTypes;
 public class Skill {
 
     @Id
-    @GeneratedValue(strategy = GenerationType.AUTO) // Auto-generate UUID
+    @GeneratedValue(strategy = GenerationType.AUTO) 
     @JdbcTypeCode(SqlTypes.UUID)
     @Column(name = "skill_id",columnDefinition = "UUID",  nullable = false)
     private UUID skillId;

@@ -23,7 +23,7 @@ public class ProjectService {
     @Autowired
     private UserRepository userRepository;
 
-    // Convert Entity to DTO
+    
     private ProjectDTO convertToDTO(Project project) {
         ProjectDTO dto = new ProjectDTO();
         dto.setProjectId(project.getProjectId());
@@ -73,7 +73,7 @@ public class ProjectService {
         return convertToDTO(savedProject);
     }
 
-    // Update Project
+   
     public Optional<ProjectDTO> updateProject(UUID id, ProjectDTO projectDTO) {
         Optional<Project> projectOpt = projectRepository.findById(id);
         if (projectOpt.isPresent()) {
@@ -98,8 +98,8 @@ public class ProjectService {
         Optional<Project> projectOpt = projectRepository.findById(id);
         if (projectOpt.isPresent()) {
             Project project = projectOpt.get();
-            if (project.getDeletedAt() == null) {  // Check if not already deleted
-                project.setDeletedAt(LocalDateTime.now()); // Soft delete by setting timestamp
+            if (project.getDeletedAt() == null) {  
+                project.setDeletedAt(LocalDateTime.now()); 
                 projectRepository.save(project);
                 return true;
             }
