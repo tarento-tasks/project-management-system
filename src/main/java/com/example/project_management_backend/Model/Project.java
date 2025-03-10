@@ -1,3 +1,4 @@
+
 package com.example.project_management_backend.Model;
 
 import jakarta.persistence.*;
@@ -47,12 +48,11 @@ public class Project {
     private LocalDate lastDate; 
 
     @Column(nullable = false)
-    private boolean openStatus;
+    private boolean openStatus; 
 
     private LocalDateTime deletedAt;
 
     @ManyToOne
     @JoinColumn(name = "mentor_id", nullable = false)
     private User mentor; 
-
 }

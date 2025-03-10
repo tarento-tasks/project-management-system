@@ -26,7 +26,7 @@ public class TaskService {
         this.projectRepository = projectRepository;
     }
 
-    // ✅ Create a new Task (Attachments are handled in Controller)
+   
     public TaskDTO createTask(TaskDTO taskDTO) {
         Project project = projectRepository.findById(taskDTO.getProjectId())
                 .orElseThrow(() -> new RuntimeException("Project not found"));
@@ -38,18 +38,17 @@ public class TaskService {
         task.setCompleteStatus(taskDTO.getCompleteStatus());
         task.setOpenStatus(taskDTO.getOpenStatus());
         task.setTaskObjective(taskDTO.getTaskObjective());
-        task.setModifiedBy(taskDTO.getModifiedBy()); // ✅ Added missing modifiedBy
+        task.setModifiedBy(taskDTO.getModifiedBy()); 
         task.setCreatedAt(LocalDateTime.now());
         task.setProject(project);
 
-        // ✅ Attachments (Already converted to byte[] in Controller)
+       
         task.setAttachments(taskDTO.getAttachments());
 
         task = taskRepository.save(task);
         return convertToDTO(task);
     }
 
-    // ✅ Update Task
     @Transactional
     public TaskDTO updateTask(TaskDTO taskDTO) {
         Task task = taskRepository.findById(taskDTO.getTaskId())
@@ -64,7 +63,7 @@ public class TaskService {
         task.setModifiedBy(taskDTO.getModifiedBy());
         task.setModifiedAt(LocalDateTime.now());
 
-        // ✅ Update Attachments
+   
         if (taskDTO.getAttachments() != null) {
             task.setAttachments(taskDTO.getAttachments());
         }
@@ -74,28 +73,27 @@ public class TaskService {
     }
 
     @Transactional
-    // ✅ Get all Tasks for a specific Project
+    
     public List<TaskDTO> getTasksByProject(UUID projectId) {
         return taskRepository.findByProject_ProjectId(projectId).stream()
                 .map(this::convertToDTO)
                 .collect(Collectors.toList());
     }
 
-    // ✅ Get Task by ID
+
     public TaskDTO getTaskById(UUID taskId) {
         return taskRepository.findById(taskId)
                 .map(this::convertToDTO)
                 .orElse(null);
     }
 
-    // ✅ Get all Tasks
     public List<TaskDTO> getAllTasks() {
         return taskRepository.findAll().stream()
                 .map(this::convertToDTO)
                 .collect(Collectors.toList());
     }
 
-    // ✅ Delete Task by ID
+  
     @Transactional
     public boolean deleteTask(UUID taskId) {
         if (taskRepository.existsById(taskId)) {
@@ -106,7 +104,7 @@ public class TaskService {
     }
 
 
-    // ✅ Convert Entity to DTO
+   
     private TaskDTO convertToDTO(Task task) {
         TaskDTO dto = new TaskDTO();
         dto.setTaskId(task.getTaskId());
@@ -119,15 +117,15 @@ public class TaskService {
         dto.setOpenStatus(task.getOpenStatus());
         dto.setDeletedAt(task.getDeletedAt());
         dto.setTaskObjective(task.getTaskObjective());
-        dto.setModifiedBy(task.getModifiedBy()); // ✅ Added modifiedBy field
+        dto.setModifiedBy(task.getModifiedBy()); 
 
         if (task.getProject() != null) {
             dto.setProjectId(task.getProject().getProjectId());
         }
 
-        // ✅ Handle Attachments
+        
         if (task.getAttachments() != null) {
-            dto.setAttachments(task.getAttachments()); // Returning byte[]
+            dto.setAttachments(task.getAttachments()); 
         }
 
         return dto;

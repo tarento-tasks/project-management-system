@@ -39,10 +39,10 @@ public class Task {
     @Column(length = 500)
     private String taskObjective;
 
-    private UUID modifiedBy; // Stores the ID of the user who modified the task
+    private UUID modifiedBy; 
 
-    // ✅ Add Many-to-One Relationship with Project
+   
     @ManyToOne
     @JoinColumn(name = "project_id", nullable = false)
-    private Project project; // Foreign key reference to Project
+    private Project project; 
 }

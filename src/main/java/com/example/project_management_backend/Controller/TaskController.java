@@ -3,6 +3,7 @@ package com.example.project_management_backend.Controller;
 import com.example.project_management_backend.DTO.TaskDTO;
 import com.example.project_management_backend.Service.TaskService;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -21,8 +22,8 @@ public class TaskController {
         this.taskService = taskService;
     }
 
-    // ✅ Create Task with File Upload
     @PostMapping(consumes = "multipart/form-data")
+    @PreAuthorize("hasAnyRole('ADMIN', 'MENTOR')") 
     public ResponseEntity<TaskDTO> createTask(
             @RequestParam("taskName") String taskName,
             @RequestParam("projectId") UUID projectId,
@@ -44,7 +45,7 @@ public class TaskController {
         taskDTO.setTaskObjective(taskObjective);
         taskDTO.setModifiedBy(modifiedBy);
 
-        // ✅ Convert file to byte[] if uploaded
+   
         if (attachments != null && !attachments.isEmpty()) {
             try {
                 taskDTO.setAttachments(attachments.getBytes());
@@ -57,7 +58,7 @@ public class TaskController {
         return ResponseEntity.ok(createdTask);
     }
 
-    // ✅ Get all Tasks for a specific Project
+
     @GetMapping("/project/{projectId}")
     public ResponseEntity<List<TaskDTO>> getTasksByProject(@PathVariable UUID projectId) {
         List<TaskDTO> tasks = taskService.getTasksByProject(projectId);
@@ -65,22 +66,21 @@ public class TaskController {
     }
 
 
-    // ✅ Get all Tasks
+
     @GetMapping
     public ResponseEntity<List<TaskDTO>> getAllTasks() {
         List<TaskDTO> tasks = taskService.getAllTasks();
         return ResponseEntity.ok(tasks);
     }
 
-    // ✅ Delete Task by ID
     @DeleteMapping("/{taskId}")
+    @PreAuthorize("hasAnyRole('ADMIN', 'MENTOR')") 
     public ResponseEntity<Void> deleteTask(@PathVariable UUID taskId) {
         boolean isDeleted = taskService.deleteTask(taskId);
         return isDeleted ? ResponseEntity.noContent().build() : ResponseEntity.notFound().build();
     }
 
 
-    // ✅ Get Task by ID
     @GetMapping("/{taskId}")
     public ResponseEntity<TaskDTO> getTaskById(@PathVariable UUID taskId) {
         TaskDTO task = taskService.getTaskById(taskId);
@@ -88,8 +88,9 @@ public class TaskController {
     }
 
 
-    // ✅ Update Task (PUT)
+
     @PutMapping(value = "/{taskId}", consumes = "multipart/form-data")
+    @PreAuthorize("hasAnyRole('ADMIN', 'MENTOR')") 
     public ResponseEntity<TaskDTO> updateTask(
             @PathVariable UUID taskId,
             @RequestParam("taskName") String taskName,
@@ -113,7 +114,7 @@ public class TaskController {
         taskDTO.setTaskObjective(taskObjective);
         taskDTO.setModifiedBy(modifiedBy);
 
-        // ✅ Convert file to byte[] if uploaded
+       
         if (attachments != null && !attachments.isEmpty()) {
             try {
                 taskDTO.setAttachments(attachments.getBytes());

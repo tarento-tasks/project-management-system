@@ -1,6 +1,8 @@
 package com.example.project_management_backend.config;
 
 import com.example.project_management_backend.Model.User;
+
+import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.SignatureAlgorithm;
 import io.jsonwebtoken.security.Keys;
@@ -10,13 +12,14 @@ import javax.annotation.PostConstruct;
 import java.nio.charset.StandardCharsets;
 import java.security.Key;
 import java.util.Date;
+import java.util.List;
 
 @Component
 public class JwtUtil {
 
     private Key secretKeyDecoded;
 
-    private static final long EXPIRATION_TIME = 86400000; // 1 day in milliseconds
+    private static final long EXPIRATION_TIME = 86400000; 
 
     @Value("${jwt.secret}")
     private String secretKey;
@@ -29,10 +32,13 @@ public class JwtUtil {
         this.secretKeyDecoded = Keys.hmacShaKeyFor(secretKey.getBytes(StandardCharsets.UTF_8));
     }
 
+    
+    
+    
     public String generateToken(User user) {
         return Jwts.builder()
                 .setSubject(user.getEmail())
-                .claim("role", user.getRole())
+                .claim("authorities", List.of("ROLE_" + user.getRole().getRoleName())) 
                 .setIssuedAt(new Date())
                 .setExpiration(new Date(System.currentTimeMillis() + EXPIRATION_TIME))
                 .signWith(secretKeyDecoded, SignatureAlgorithm.HS256)
@@ -47,4 +53,11 @@ public class JwtUtil {
                 .getBody()
                 .getSubject();
     }
+    public Claims extractAllClaims(String token) {
+    return Jwts.parserBuilder()
+            .setSigningKey(secretKeyDecoded)
+            .build()
+            .parseClaimsJws(token)
+            .getBody();
+}
 }

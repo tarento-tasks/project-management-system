@@ -15,7 +15,7 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
-@RequestMapping("/api/auth") // Ensure the base path is /api/auth
+@RequestMapping("/api/auth") 
 public class AuthController {
 
 @Autowired

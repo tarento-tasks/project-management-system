@@ -7,7 +7,8 @@ import com.example.project_management_backend.Repository.ProjectRepository;
 import com.example.project_management_backend.Repository.UserRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
-
+import jakarta.transaction.Transactional;
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
@@ -36,18 +37,20 @@ public class ProjectService {
         dto.setMentorId(project.getMentor().getUserId());
         return dto;
     }
-
-
+    @Transactional
     public List<ProjectDTO> getAllProjects() {
-        List<Project> projects = projectRepository.findAll();
+        List<Project> projects = projectRepository.findByDeletedAtIsNull();
         return projects.stream().map(this::convertToDTO).collect(Collectors.toList());
     }
-
+    
+    @Transactional
     public Optional<ProjectDTO> getProjectById(UUID id) {
-        return projectRepository.findById(id).map(this::convertToDTO);
+        return projectRepository.findByProjectIdAndDeletedAtIsNull(id)
+                .map(this::convertToDTO);
     }
+    
 
- 
+   
     public ProjectDTO createProject(ProjectDTO projectDTO) {
         Optional<User> mentorOpt = userRepository.findById(projectDTO.getMentorId());
         if (mentorOpt.isEmpty()) {
@@ -69,7 +72,7 @@ public class ProjectService {
         return convertToDTO(savedProject);
     }
 
-    // Update Project
+
     public Optional<ProjectDTO> updateProject(UUID id, ProjectDTO projectDTO) {
         Optional<Project> projectOpt = projectRepository.findById(id);
         if (projectOpt.isPresent()) {
@@ -89,11 +92,16 @@ public class ProjectService {
         return Optional.empty();
     }
 
-    // Delete Project
+    @Transactional
     public boolean deleteProject(UUID id) {
-        if (projectRepository.existsById(id)) {
-            projectRepository.deleteById(id);
-            return true;
+        Optional<Project> projectOpt = projectRepository.findById(id);
+        if (projectOpt.isPresent()) {
+            Project project = projectOpt.get();
+            if (project.getDeletedAt() == null) {  
+                project.setDeletedAt(LocalDateTime.now()); 
+                projectRepository.save(project);
+                return true;
+            }
         }
         return false;
     }

@@ -18,4 +18,3 @@ public class ProjectDTO {
     private boolean openStatus;
     private UUID mentorId; 
 }
-
