@@ -39,6 +39,10 @@ public class SecurityConfig {
                         .requestMatchers("/api/tasks/**").hasAnyRole("ADMIN", "MENTOR") 
                         .requestMatchers("/api/skills/**").hasRole("ADMIN") 
                         .requestMatchers("/api/skill-mapping/**").permitAll() 
+                        .requestMatchers("/api/skill-mapping/**").permitAll() 
+                        .requestMatchers("/api/project-enrollment**").permitAll() 
+                        .requestMatchers("/api/project-enrollment/enroll").hasRole("STUDENT")
+                        .requestMatchers("/api/project-enrollment/**").hasRole("ADMIN") 
                         .anyRequest().authenticated()
                 )
                 .addFilterBefore(new JWTFilter(jwtUtil), UsernamePasswordAuthenticationFilter.class); 
