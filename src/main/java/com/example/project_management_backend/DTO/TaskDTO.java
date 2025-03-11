@@ -18,4 +18,5 @@ public class TaskDTO {
     private String taskObjective;
     private UUID modifiedBy;
     private UUID projectId; 
+    
 }

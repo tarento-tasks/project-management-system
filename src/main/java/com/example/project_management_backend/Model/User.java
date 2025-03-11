@@ -26,7 +26,7 @@ public class User {
     private String password;
 
     private String name;
-    private String dob;
+    private String dob; 
 
     @Lob
     private byte[] images;
@@ -40,11 +40,12 @@ public class User {
     private String previousWork;
     private String qualifications;
 
+
+
     @ManyToOne
     @JoinColumn(name = "role_id", nullable = false)
-    private Role role;
+    private Role role; 
 
-    public boolean isDeleted() {
-        return deletedAt != null;
-    }
+
+
 }
