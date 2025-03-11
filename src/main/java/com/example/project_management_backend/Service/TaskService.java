@@ -1,14 +1,16 @@
 package com.example.project_management_backend.Service;
 
 import com.example.project_management_backend.DTO.TaskDTO;
+import com.example.project_management_backend.Model.Project;
 import com.example.project_management_backend.Model.Task;
+import com.example.project_management_backend.Repository.ProjectRepository;
 import com.example.project_management_backend.Repository.TaskRepository;
+import jakarta.transaction.Transactional;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
-
+import java.util.Optional;
 import java.time.LocalDateTime;
 import java.util.List;
-import java.util.Optional;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
@@ -16,77 +18,104 @@ import java.util.stream.Collectors;
 public class TaskService {
 
     private final TaskRepository taskRepository;
+    private final ProjectRepository projectRepository;
 
     @Autowired
-    public TaskService(TaskRepository taskRepository) {
+    public TaskService(TaskRepository taskRepository, ProjectRepository projectRepository) {
         this.taskRepository = taskRepository;
+        this.projectRepository = projectRepository;
     }
 
-    // Create a new Task
+    
     public TaskDTO createTask(TaskDTO taskDTO) {
+        Project project = projectRepository.findById(taskDTO.getProjectId())
+                .orElseThrow(() -> new RuntimeException("Project not found"));
+
         Task task = new Task();
         task.setTaskName(taskDTO.getTaskName());
-        task.setAttachments(taskDTO.getAttachments());
         task.setDueDate(taskDTO.getDueDate());
         task.setStudentStatus(taskDTO.getStudentStatus());
         task.setCompleteStatus(taskDTO.getCompleteStatus());
         task.setOpenStatus(taskDTO.getOpenStatus());
         task.setTaskObjective(taskDTO.getTaskObjective());
-        task.setCreatedAt(LocalDateTime.now()); // Set created time
+        task.setModifiedBy(taskDTO.getModifiedBy()); 
+        task.setCreatedAt(LocalDateTime.now());
+        task.setProject(project);
+
+       
+        task.setAttachments(taskDTO.getAttachments());
 
         task = taskRepository.save(task);
         return convertToDTO(task);
     }
 
-    // Get all Tasks
-    public List<TaskDTO> getAllTasks() {
-        return taskRepository.findAll().stream()
+   
+    @Transactional
+    public TaskDTO updateTask(TaskDTO taskDTO) {
+        Task task = taskRepository.findById(taskDTO.getTaskId())
+                .orElseThrow(() -> new RuntimeException("Task not found"));
+
+        task.setTaskName(taskDTO.getTaskName());
+        task.setDueDate(taskDTO.getDueDate());
+        task.setStudentStatus(taskDTO.getStudentStatus());
+        task.setCompleteStatus(taskDTO.getCompleteStatus());
+        task.setOpenStatus(taskDTO.getOpenStatus());
+        task.setTaskObjective(taskDTO.getTaskObjective());
+        task.setModifiedBy(taskDTO.getModifiedBy());
+        task.setModifiedAt(LocalDateTime.now());
+
+        
+        if (taskDTO.getAttachments() != null) {
+            task.setAttachments(taskDTO.getAttachments());
+        }
+
+        task = taskRepository.save(task);
+        return convertToDTO(task);
+    }
+
+    @Transactional
+    
+    public List<TaskDTO> getTasksByProject(UUID projectId) {
+        return taskRepository.findByProject_ProjectId(projectId).stream()
                 .map(this::convertToDTO)
                 .collect(Collectors.toList());
     }
 
-    // Get Task by ID
+    
     public TaskDTO getTaskById(UUID taskId) {
         return taskRepository.findById(taskId)
                 .map(this::convertToDTO)
                 .orElse(null);
     }
 
-    // Update Task
-    public TaskDTO updateTask(UUID taskId, TaskDTO updatedTaskDTO) {
-        Optional<Task> taskOptional = taskRepository.findById(taskId);
-        if (taskOptional.isPresent()) {
-            Task task = taskOptional.get();
-            task.setTaskName(updatedTaskDTO.getTaskName());
-            task.setAttachments(updatedTaskDTO.getAttachments());
-            task.setDueDate(updatedTaskDTO.getDueDate());
-            task.setStudentStatus(updatedTaskDTO.getStudentStatus());
-            task.setCompleteStatus(updatedTaskDTO.getCompleteStatus());
-            task.setOpenStatus(updatedTaskDTO.getOpenStatus());
-            task.setTaskObjective(updatedTaskDTO.getTaskObjective());
-            task.setModifiedAt(LocalDateTime.now()); // Set modified time
-
-            taskRepository.save(task);
-            return convertToDTO(task);
-        }
-        return null;
+    
+    public List<TaskDTO> getAllTasks() {
+        return taskRepository.findAll().stream()
+                .map(this::convertToDTO)
+                .collect(Collectors.toList());
     }
 
-    // Delete Task
+    
+    @Transactional
     public boolean deleteTask(UUID taskId) {
-        if (taskRepository.existsById(taskId)) {
-            taskRepository.deleteById(taskId);
-            return true;
+        Optional<Task> taskOpt = taskRepository.findById(taskId);
+        if (taskOpt.isPresent()) {
+            Task task = taskOpt.get();
+            if (task.getDeletedAt() == null) {  
+                task.setDeletedAt(LocalDateTime.now()); 
+                taskRepository.save(task);
+                return true;
+            }
         }
         return false;
     }
 
-    // Convert Entity to DTO
+
+    
     private TaskDTO convertToDTO(Task task) {
         TaskDTO dto = new TaskDTO();
         dto.setTaskId(task.getTaskId());
         dto.setTaskName(task.getTaskName());
-        dto.setAttachments(task.getAttachments());
         dto.setCreatedAt(task.getCreatedAt());
         dto.setDueDate(task.getDueDate());
         dto.setStudentStatus(task.getStudentStatus());
@@ -95,6 +124,17 @@ public class TaskService {
         dto.setOpenStatus(task.getOpenStatus());
         dto.setDeletedAt(task.getDeletedAt());
         dto.setTaskObjective(task.getTaskObjective());
+        dto.setModifiedBy(task.getModifiedBy());
+
+        if (task.getProject() != null) {
+            dto.setProjectId(task.getProject().getProjectId());
+        }
+
+       
+        if (task.getAttachments() != null) {
+            dto.setAttachments(task.getAttachments()); 
+        }
+
         return dto;
     }
 }

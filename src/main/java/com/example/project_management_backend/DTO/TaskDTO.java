@@ -1,5 +1,4 @@
 package com.example.project_management_backend.DTO;
-
 import lombok.Data;
 import java.time.LocalDateTime;
 import java.util.UUID;
@@ -17,4 +16,6 @@ public class TaskDTO {
     private String openStatus;
     private LocalDateTime deletedAt;
     private String taskObjective;
+    private UUID modifiedBy;
+    private UUID projectId; 
 }
