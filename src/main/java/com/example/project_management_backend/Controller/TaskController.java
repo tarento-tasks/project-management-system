@@ -22,8 +22,9 @@ public class TaskController {
         this.taskService = taskService;
     }
 
+
     @PostMapping(consumes = "multipart/form-data")
-    @PreAuthorize("hasAnyRole('ADMIN', 'MENTOR')") 
+    @PreAuthorize("hasAnyRole('MENTOR', 'ADMIN')")
     public ResponseEntity<TaskDTO> createTask(
             @RequestParam("taskName") String taskName,
             @RequestParam("projectId") UUID projectId,
@@ -45,7 +46,7 @@ public class TaskController {
         taskDTO.setTaskObjective(taskObjective);
         taskDTO.setModifiedBy(modifiedBy);
 
-   
+      
         if (attachments != null && !attachments.isEmpty()) {
             try {
                 taskDTO.setAttachments(attachments.getBytes());
@@ -58,30 +59,35 @@ public class TaskController {
         return ResponseEntity.ok(createdTask);
     }
 
-
+ 
     @GetMapping("/project/{projectId}")
+    @PreAuthorize("hasAnyRole('MENTOR', 'ADMIN','STUDENT')")
+
     public ResponseEntity<List<TaskDTO>> getTasksByProject(@PathVariable UUID projectId) {
         List<TaskDTO> tasks = taskService.getTasksByProject(projectId);
         return ResponseEntity.ok(tasks);
     }
 
 
-
     @GetMapping
+    @PreAuthorize("hasAnyRole('ADMIN')")
     public ResponseEntity<List<TaskDTO>> getAllTasks() {
         List<TaskDTO> tasks = taskService.getAllTasks();
         return ResponseEntity.ok(tasks);
     }
 
+
     @DeleteMapping("/{taskId}")
-    @PreAuthorize("hasAnyRole('ADMIN', 'MENTOR')") 
+    @PreAuthorize("hasAnyRole('MENTOR', 'ADMIN')")
     public ResponseEntity<Void> deleteTask(@PathVariable UUID taskId) {
         boolean isDeleted = taskService.deleteTask(taskId);
         return isDeleted ? ResponseEntity.noContent().build() : ResponseEntity.notFound().build();
     }
 
 
+
     @GetMapping("/{taskId}")
+    @PreAuthorize("hasAnyRole('MENTOR', 'ADMIN','STUDENT')")
     public ResponseEntity<TaskDTO> getTaskById(@PathVariable UUID taskId) {
         TaskDTO task = taskService.getTaskById(taskId);
         return (task != null) ? ResponseEntity.ok(task) : ResponseEntity.notFound().build();
@@ -90,7 +96,7 @@ public class TaskController {
 
 
     @PutMapping(value = "/{taskId}", consumes = "multipart/form-data")
-    @PreAuthorize("hasAnyRole('ADMIN', 'MENTOR')") 
+    @PreAuthorize("hasAnyRole('MENTOR', 'ADMIN')")
     public ResponseEntity<TaskDTO> updateTask(
             @PathVariable UUID taskId,
             @RequestParam("taskName") String taskName,
@@ -114,7 +120,6 @@ public class TaskController {
         taskDTO.setTaskObjective(taskObjective);
         taskDTO.setModifiedBy(modifiedBy);
 
-       
         if (attachments != null && !attachments.isEmpty()) {
             try {
                 taskDTO.setAttachments(attachments.getBytes());

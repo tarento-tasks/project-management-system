@@ -8,7 +8,7 @@ import com.example.project_management_backend.Repository.TaskRepository;
 import jakarta.transaction.Transactional;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
-
+import java.util.Optional;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.UUID;
@@ -26,7 +26,7 @@ public class TaskService {
         this.projectRepository = projectRepository;
     }
 
-   
+    
     public TaskDTO createTask(TaskDTO taskDTO) {
         Project project = projectRepository.findById(taskDTO.getProjectId())
                 .orElseThrow(() -> new RuntimeException("Project not found"));
@@ -49,6 +49,7 @@ public class TaskService {
         return convertToDTO(task);
     }
 
+   
     @Transactional
     public TaskDTO updateTask(TaskDTO taskDTO) {
         Task task = taskRepository.findById(taskDTO.getTaskId())
@@ -63,7 +64,7 @@ public class TaskService {
         task.setModifiedBy(taskDTO.getModifiedBy());
         task.setModifiedAt(LocalDateTime.now());
 
-   
+        
         if (taskDTO.getAttachments() != null) {
             task.setAttachments(taskDTO.getAttachments());
         }
@@ -80,31 +81,37 @@ public class TaskService {
                 .collect(Collectors.toList());
     }
 
-
+    
     public TaskDTO getTaskById(UUID taskId) {
         return taskRepository.findById(taskId)
                 .map(this::convertToDTO)
                 .orElse(null);
     }
 
+    
     public List<TaskDTO> getAllTasks() {
         return taskRepository.findAll().stream()
                 .map(this::convertToDTO)
                 .collect(Collectors.toList());
     }
 
-  
+    
     @Transactional
     public boolean deleteTask(UUID taskId) {
-        if (taskRepository.existsById(taskId)) {
-            taskRepository.deleteById(taskId);
-            return true;
+        Optional<Task> taskOpt = taskRepository.findById(taskId);
+        if (taskOpt.isPresent()) {
+            Task task = taskOpt.get();
+            if (task.getDeletedAt() == null) {  
+                task.setDeletedAt(LocalDateTime.now()); 
+                taskRepository.save(task);
+                return true;
+            }
         }
         return false;
     }
 
 
-   
+    
     private TaskDTO convertToDTO(Task task) {
         TaskDTO dto = new TaskDTO();
         dto.setTaskId(task.getTaskId());
@@ -117,13 +124,13 @@ public class TaskService {
         dto.setOpenStatus(task.getOpenStatus());
         dto.setDeletedAt(task.getDeletedAt());
         dto.setTaskObjective(task.getTaskObjective());
-        dto.setModifiedBy(task.getModifiedBy()); 
+        dto.setModifiedBy(task.getModifiedBy());
 
         if (task.getProject() != null) {
             dto.setProjectId(task.getProject().getProjectId());
         }
 
-        
+       
         if (task.getAttachments() != null) {
             dto.setAttachments(task.getAttachments()); 
         }

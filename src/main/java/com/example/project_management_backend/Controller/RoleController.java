@@ -20,13 +20,14 @@ public class RoleController {
     private RoleService roleService;
 
     @GetMapping
-    @PreAuthorize("hasRole('ADMIN')") 
+    
     public List<RoleDTO> getAllRoles() {
         return roleService.getAllRoles();
     }
 
     @GetMapping("/{id}")
     @PreAuthorize("hasRole('ADMIN')") 
+    
     public ResponseEntity<RoleDTO> getRoleById(@PathVariable UUID id) {
         Optional<RoleDTO> role = roleService.getRoleById(id);
         return role.map(ResponseEntity::ok).orElseGet(() -> ResponseEntity.notFound().build());
@@ -34,6 +35,7 @@ public class RoleController {
 
     @GetMapping("/name/{roleName}")
     @PreAuthorize("hasRole('ADMIN')") 
+    
     public ResponseEntity<RoleDTO> getRoleByName(@PathVariable String roleName) {
         Optional<RoleDTO> role = roleService.getRoleByName(roleName);
         return role.map(ResponseEntity::ok).orElseGet(() -> ResponseEntity.notFound().build());
@@ -42,20 +44,20 @@ public class RoleController {
   
    
 
-@PostMapping
-@PreAuthorize("hasRole('ADMIN')") 
-public ResponseEntity<?> createRole(@RequestBody Role role) {
+    @PostMapping
+    @PreAuthorize("hasRole('ADMIN')") 
+    public ResponseEntity<?> createRole(@RequestBody Role role) {
     try {
         Role savedRole = roleService.saveRole(role);
         return ResponseEntity.ok(savedRole);
     } catch (DataIntegrityViolationException e) {
         return ResponseEntity.badRequest().body("Role name already exists");
     }
-}
+    }
 
-@DeleteMapping("/{id}")
-@PreAuthorize("hasRole('ADMIN')") 
-public ResponseEntity<Void> deleteRole(@PathVariable UUID id) {
+    @DeleteMapping("/{id}")
+    @PreAuthorize("hasRole('ADMIN')") 
+    public ResponseEntity<Void> deleteRole(@PathVariable UUID id) {
         roleService.deleteRole(id);
         return ResponseEntity.noContent().build();
     }

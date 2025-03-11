@@ -6,6 +6,7 @@ import com.example.project_management_backend.Service.SkillMappingService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -20,17 +21,20 @@ public class SkillMappingController {
 
    
     @GetMapping("/user/{userId}")
+    @PreAuthorize("hasAnyRole('MENTOR', 'ADMIN','STUDENT')")
     public ResponseEntity<List<SkillMappingRequest>> getSkillMappingsByUserId(@PathVariable UUID userId) {
         return ResponseEntity.ok(skillMappingService.getSkillMappingsByUserId(userId));
     }
 
     @GetMapping("/skill/{skillId}")
+    @PreAuthorize("hasAnyRole('MENTOR', 'ADMIN','STUDENT')")
     public ResponseEntity<List<SkillMappingRequest>> getSkillMappingsBySkillId(@PathVariable UUID skillId) {
         return ResponseEntity.ok(skillMappingService.getSkillMappingsBySkillId(skillId));
     }
    
     @PostMapping
-public ResponseEntity<SkillMappingRequest> addSkillToUser(@RequestBody SkillMappingRequest request) {
+    @PreAuthorize("hasAnyRole('MENTOR', 'ADMIN','STUDENT')")
+    public ResponseEntity<SkillMappingRequest> addSkillToUser(@RequestBody SkillMappingRequest request) {
     SkillMapping skillMapping = skillMappingService.addSkillToUser(request.getUserId(), request.getSkillId());
     
     SkillMappingRequest response = new SkillMappingRequest(

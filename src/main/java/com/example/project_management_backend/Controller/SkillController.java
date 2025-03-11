@@ -18,12 +18,14 @@ public class SkillController {
 
    
     @GetMapping
+    @PreAuthorize("hasAnyRole('MENTOR', 'ADMIN','STUDENT')")
     public List<SkillDTO> getAllSkills() {
         return skillService.getAllSkills();
     }
 
     
     @GetMapping("/{id}")
+    @PreAuthorize("hasAnyRole('MENTOR', 'ADMIN','STUDENT')")
     public ResponseEntity<SkillDTO> getSkillById(@PathVariable("id") UUID id) {
        SkillDTO skill = skillService.getSkillById(id);
        return (skill != null) ? ResponseEntity.ok(skill) : ResponseEntity.notFound().build();

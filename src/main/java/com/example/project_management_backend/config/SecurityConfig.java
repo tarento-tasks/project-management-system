@@ -2,6 +2,7 @@ package com.example.project_management_backend.config;
 
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.http.HttpMethod;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.config.annotation.authentication.configuration.AuthenticationConfiguration;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
@@ -30,19 +31,40 @@ public class SecurityConfig {
                 .authorizeHttpRequests(auth -> auth
                      
                         .requestMatchers("/api/auth/**").permitAll() 
-                   
-                        .requestMatchers("/api/roles/**").hasRole("ADMIN") 
+                         
+                        .requestMatchers("/api/roles/**").hasRole("ADMIN")
                   
-                        .requestMatchers("/api/users/**").permitAll() 
                         
-                        .requestMatchers("/api/projects/**").hasAnyRole("ADMIN", "MENTOR") 
+
+                         
+                        .requestMatchers(HttpMethod.POST, "/api/users").hasRole("ADMIN")// Create User
+                        .requestMatchers(HttpMethod.GET, "/api/users").hasRole("ADMIN") // Get All Users
+                        .requestMatchers(HttpMethod.GET, "/api/users/email/**").hasAnyRole("ADMIN","MENTOR","STUDENT") // Get User by Email
+                        .requestMatchers(HttpMethod.PUT, "/api/users/admin/**").hasRole("ADMIN") // Update Any User
+                        .requestMatchers(HttpMethod.DELETE, "/api/users/**").hasRole("ADMIN") // Delete User
+
+                        
+                        .requestMatchers(HttpMethod.GET, "/api/users/**").authenticated() // Get Own Profile
+                        .requestMatchers(HttpMethod.PUT, "/api/users/**").authenticated() // Update Own Profile
+                
+                        
+                        .requestMatchers("/api/projects/**").hasAnyRole("ADMIN", "MENTOR","STUDENT") 
                         .requestMatchers("/api/tasks/**").hasAnyRole("ADMIN", "MENTOR") 
-                        .requestMatchers("/api/skills/**").hasRole("ADMIN") 
-                        .requestMatchers("/api/skill-mapping/**").permitAll() 
-                        .requestMatchers("/api/skill-mapping/**").permitAll() 
+                        .requestMatchers("/api/skills/**").hasAnyRole("ADMIN","MENTOR","STUDENT")
+                        
+                        .requestMatchers("/api/skill-mapping/**").hasAnyRole("ADMIN","MENTOR","STUDENT") 
                         .requestMatchers("/api/project-enrollment**").permitAll() 
                         .requestMatchers("/api/project-enrollment/enroll").hasRole("STUDENT")
                         .requestMatchers("/api/project-enrollment/**").hasRole("ADMIN") 
+
+                        
+                        .requestMatchers("/api/tasks/*/feedback").hasRole("STUDENT")
+                        .requestMatchers("/api/tasks/*/feedback/**").hasRole("MENTOR")
+
+                        
+                        .requestMatchers("/api/tasks/*/comments").hasRole("MENTOR")
+                        .requestMatchers("/api/tasks/*/comments/**").hasRole("STUDENT")
+
                         .anyRequest().authenticated()
                 )
                 .addFilterBefore(new JWTFilter(jwtUtil), UsernamePasswordAuthenticationFilter.class); 

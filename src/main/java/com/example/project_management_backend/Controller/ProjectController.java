@@ -20,12 +20,15 @@ public class ProjectController {
 
  
     @GetMapping
+    @PreAuthorize("hasRole('ADMIN')") 
     public ResponseEntity<List<ProjectDTO>> getAllProjects() {
         return ResponseEntity.ok(projectService.getAllProjects());
     }
 
   
     @GetMapping("/{id}")
+    @PreAuthorize("hasAnyRole('MENTOR', 'ADMIN','STUDENT')")
+
     public ResponseEntity<ProjectDTO> getProjectById(@PathVariable UUID id) {
         Optional<ProjectDTO> project = projectService.getProjectById(id);
         return project.map(ResponseEntity::ok).orElseGet(() -> ResponseEntity.notFound().build());

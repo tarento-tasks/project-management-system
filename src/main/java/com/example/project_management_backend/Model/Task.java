@@ -41,7 +41,7 @@ public class Task {
 
     private UUID modifiedBy; 
 
-   
+    
     @ManyToOne
     @JoinColumn(name = "project_id", nullable = false)
     private Project project; 

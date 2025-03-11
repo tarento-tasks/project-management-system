@@ -3,6 +3,7 @@ package com.example.project_management_backend.Controller;
 import com.example.project_management_backend.DTO.FeedbackDTO;
 import com.example.project_management_backend.Service.FeedbackService;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -18,16 +19,18 @@ public class FeedbackController {
         this.feedbackService = feedbackService;
     }
 
-    // Mentor: Post Feedback
+    
     @PostMapping
+    @PreAuthorize("hasRole('MENTOR')") 
     public ResponseEntity<FeedbackDTO> addFeedback(@PathVariable UUID taskId,
                                                    @RequestBody FeedbackDTO feedbackDTO) {
         FeedbackDTO createdFeedback = feedbackService.addFeedback(taskId, feedbackDTO.getMentorId(), feedbackDTO.getFeedback());
         return ResponseEntity.ok(createdFeedback);
     }
 
-    // Student: Get Feedback by Task ID
+    
     @GetMapping
+    @PreAuthorize("hasRole('STUDENT')") 
     public ResponseEntity<List<FeedbackDTO>> getFeedback(@PathVariable UUID taskId) {
         List<FeedbackDTO> feedbackList = feedbackService.getFeedbackByTaskId(taskId);
         return ResponseEntity.ok(feedbackList);
