@@ -3,6 +3,7 @@ package com.example.project_management_backend.Controller;
 import com.example.project_management_backend.DTO.ProjectDTO;
 import com.example.project_management_backend.Service.ProjectService;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
@@ -18,39 +19,35 @@ public class ProjectController {
     @Autowired
     private ProjectService projectService;
 
-    // Get All Projects
+    // 🔹 Unified GET method: Fetch all projects or by ID
     @GetMapping
-    public ResponseEntity<List<ProjectDTO>> getAllProjects() {
-        return ResponseEntity.ok(projectService.getAllProjects());
-    }
+    public ResponseEntity<List<ProjectDTO>> getProjects(@RequestParam(required = false) UUID id) {
+    return ResponseEntity.ok(projectService.getProjects(Optional.ofNullable(id)));
+}
 
-    // Get Project by ID
-    @GetMapping("/{id}")
-    public ResponseEntity<ProjectDTO> getProjectById(@PathVariable UUID id) {
-        Optional<ProjectDTO> project = projectService.getProjectById(id);
-        return project.map(ResponseEntity::ok).orElseGet(() -> ResponseEntity.notFound().build());
-    }
+
     
     @PostMapping
     @PreAuthorize("hasRole('ADMIN')")
-    public ResponseEntity<ProjectDTO> createProject(@RequestBody ProjectDTO projectDTO) {
-        return ResponseEntity.ok(projectService.createProject(projectDTO));
+    public ResponseEntity<ProjectDTO> createOrUpdateProject(@RequestBody ProjectDTO projectDTO,
+                                                            @RequestParam(required = false) UUID id) {
+        try {
+            ProjectDTO savedProject = projectService.saveOrUpdateProject(Optional.ofNullable(id), projectDTO);
+            return ResponseEntity.ok(savedProject);
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(null);
+        } catch (RuntimeException e) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(null);
+        }
     }
 
-    @PutMapping("/{id}")
-    @PreAuthorize("hasRole('ADMIN')")
-    public ResponseEntity<ProjectDTO> updateProject(@PathVariable UUID id, @RequestBody ProjectDTO projectDTO) {
-        Optional<ProjectDTO> updatedProject = projectService.updateProject(id, projectDTO);
-        return updatedProject.map(ResponseEntity::ok).orElseGet(() -> ResponseEntity.notFound().build());
-    }
-
+    
     @DeleteMapping("/{id}")
     @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<String> deleteProject(@PathVariable UUID id) {
-    if (projectService.deleteProject(id)) {
-        return ResponseEntity.ok("Project deleted successfully");
+        if (projectService.deleteProject(id)) {
+            return ResponseEntity.ok("Project deleted successfully");
+        }
+        return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Project not found or already deleted");
     }
-    return ResponseEntity.notFound().build();
-}
-
 }

@@ -23,7 +23,7 @@ public class ProjectService {
     @Autowired
     private UserRepository userRepository;
 
-    
+    // Convert entity to DTO
     private ProjectDTO convertToDTO(Project project) {
         ProjectDTO dto = new ProjectDTO();
         dto.setProjectId(project.getProjectId());
@@ -38,27 +38,33 @@ public class ProjectService {
         dto.setMentorId(project.getMentor().getUserId());
         return dto;
     }
-    @Transactional
-    public List<ProjectDTO> getAllProjects() {
-        List<Project> projects = projectRepository.findByDeletedAtIsNull();
-        return projects.stream().map(this::convertToDTO).collect(Collectors.toList());
-    }
-    
-    @Transactional
-    public Optional<ProjectDTO> getProjectById(UUID id) {
-        return projectRepository.findByProjectIdAndDeletedAtIsNull(id)
-                .map(this::convertToDTO);
-    }
-    
 
-   
-    public ProjectDTO createProject(ProjectDTO projectDTO) {
-        Optional<User> mentorOpt = userRepository.findById(projectDTO.getMentorId());
-        if (mentorOpt.isEmpty()) {
-            throw new IllegalArgumentException("Mentor not found");
+    // 🔹 Unified GET method: Fetch all projects or by ID
+    @Transactional
+    public List<ProjectDTO> getProjects(Optional<UUID> projectId) {
+        if (projectId.isPresent()) {
+            return projectRepository.findByProjectIdAndDeletedAtIsNull(projectId.get())
+                    .map(this::convertToDTO)
+                    .map(List::of)
+                    .orElseThrow(() -> new RuntimeException("Project not found"));
         }
+        return projectRepository.findByDeletedAtIsNull().stream()
+                .map(this::convertToDTO)
+                .collect(Collectors.toList());
+    }
 
-        Project project = new Project();
+    // 🔹 Unified POST/PUT method: Create or update project
+    @Transactional
+    public ProjectDTO saveOrUpdateProject(Optional<UUID> projectId, ProjectDTO projectDTO) {
+        Project project = projectId.flatMap(projectRepository::findById)
+                .filter(p -> p.getDeletedAt() == null)
+                .orElse(new Project()); // Create a new one if not found
+
+        // Fetch mentor
+        User mentor = userRepository.findById(projectDTO.getMentorId())
+                .orElseThrow(() -> new IllegalArgumentException("Mentor not found"));
+
+        // Update project details
         project.setTitle(projectDTO.getTitle());
         project.setObjective(projectDTO.getObjective());
         project.setDescription(projectDTO.getDescription());
@@ -67,43 +73,21 @@ public class ProjectService {
         project.setRepo(projectDTO.getRepo());
         project.setLastDate(projectDTO.getLastDate());
         project.setOpenStatus(projectDTO.isOpenStatus());
-        project.setMentor(mentorOpt.get());
+        project.setMentor(mentor);
 
-        Project savedProject = projectRepository.save(project);
-        return convertToDTO(savedProject);
+        // Save and return DTO
+        return convertToDTO(projectRepository.save(project));
     }
 
-   
-    public Optional<ProjectDTO> updateProject(UUID id, ProjectDTO projectDTO) {
-        Optional<Project> projectOpt = projectRepository.findById(id);
-        if (projectOpt.isPresent()) {
-            Project project = projectOpt.get();
-            project.setTitle(projectDTO.getTitle());
-            project.setObjective(projectDTO.getObjective());
-            project.setDescription(projectDTO.getDescription());
-            project.setDueDate(projectDTO.getDueDate());
-            project.setCriteria(projectDTO.getCriteria());
-            project.setRepo(projectDTO.getRepo());
-            project.setLastDate(projectDTO.getLastDate());
-            project.setOpenStatus(projectDTO.isOpenStatus());
-
-            Project updatedProject = projectRepository.save(project);
-            return Optional.of(convertToDTO(updatedProject));
-        }
-        return Optional.empty();
-    }
-
+    // 🔹 Soft delete
     @Transactional
     public boolean deleteProject(UUID id) {
-        Optional<Project> projectOpt = projectRepository.findById(id);
-        if (projectOpt.isPresent()) {
-            Project project = projectOpt.get();
-            if (project.getDeletedAt() == null) {  
-                project.setDeletedAt(LocalDateTime.now()); 
-                projectRepository.save(project);
-                return true;
-            }
-        }
-        return false;
+        return projectRepository.findById(id)
+                .filter(p -> p.getDeletedAt() == null) // Only delete active projects
+                .map(p -> {
+                    p.setDeletedAt(LocalDateTime.now());
+                    projectRepository.save(p);
+                    return true;
+                }).orElse(false);
     }
 }

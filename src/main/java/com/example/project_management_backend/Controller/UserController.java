@@ -1,17 +1,13 @@
 package com.example.project_management_backend.Controller;
 
 import com.example.project_management_backend.DTO.UserDTO;
-import com.example.project_management_backend.Model.Role;
 import com.example.project_management_backend.Model.User;
-import com.example.project_management_backend.Service.RoleService;
 import com.example.project_management_backend.Service.UserService;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.security.crypto.password.PasswordEncoder;
+
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
-import java.io.IOException;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
@@ -20,124 +16,54 @@ import java.util.UUID;
 @RequestMapping("/api/users")
 public class UserController {
 
-    @Autowired
-    private PasswordEncoder passwordEncoder;
+    private final UserService userService;
 
-    @Autowired
-    private UserService userService;
+    public UserController(UserService userService) {
+        this.userService = userService;
+    }
 
-    @Autowired
-    private RoleService roleService; 
-
+    
     @GetMapping
-    public List<UserDTO> getAllUsers() {
-        return userService.getAllUsers();
+    public ResponseEntity<?> getUsers(@RequestParam(required = false) UUID userId,
+                                      @RequestParam(required = false) String email) {
+        if (userId != null) {
+            return userService.getUserById(userId)
+                    .map(ResponseEntity::ok)
+                    .orElse(ResponseEntity.notFound().build());
+        }
+        if (email != null) {
+            return userService.getUserByEmail(email)
+                    .map(ResponseEntity::ok)
+                    .orElse(ResponseEntity.notFound().build());
+        }
+        return ResponseEntity.ok(userService.getAllUsers());
     }
 
-    @GetMapping("/{id}")
-    public Optional<UserDTO> getUserById(@PathVariable UUID id) {
-        return userService.getUserById(id);
-    }
-
-    @GetMapping("/email/{email}")
-    public Optional<UserDTO> getUserByEmail(@PathVariable String email) {
-        return userService.getUserByEmail(email);
-    }
-
-    @PostMapping(consumes = "multipart/form-data")
-    public User createUser(
+    
+    @PostMapping
+    public ResponseEntity<?> createOrUpdateUser(
+            @RequestParam(required = false) UUID userId,
             @RequestParam String email,
-            @RequestParam String password,
+            @RequestParam(required = false) String password,
             @RequestParam String name,
-            @RequestParam(required = false) String dob,
+            @RequestParam String dob,
             @RequestParam(required = false) MultipartFile image,
             @RequestParam(required = false) String previousWork,
             @RequestParam(required = false) String qualifications,
-            @RequestParam UUID role_id  
-    ) {
-
-        System.out.println("Received image: " + (image != null ? image.getOriginalFilename() : "No image"));
-        
-        User user = new User();
-        user.setEmail(email);
-
-        String hashedPassword = passwordEncoder.encode(password);
-        user.setPassword(hashedPassword);
-
-        user.setName(name);
-        user.setDob(dob);
-        user.setPreviousWork(previousWork);
-        user.setQualifications(qualifications);
-
-        
-        Optional<Role> role = roleService.getRoleById(role_id)
-                .map(roleDTO -> new Role(roleDTO.getRoleId(), roleDTO.getRoleName()));
-
-        if (role.isPresent()) {
-            user.setRole(role.get()); 
-        } else {
-            throw new RuntimeException("Invalid Role ID: " + role_id);
-        }
+            @RequestParam(required = false) UUID roleId) {
 
         try {
-            if (image != null && !image.isEmpty()) {
-                user.setImages(image.getBytes()); 
-            }
-        } catch (IOException e) {
-            e.printStackTrace();
+            User user = userService.createOrUpdateUser(userId, email, password, name, dob, image, previousWork, qualifications, roleId);
+            return ResponseEntity.ok(userService.convertToDTO(user));
+        } catch (RuntimeException e) {
+            return ResponseEntity.badRequest().body(e.getMessage());
         }
-
-        return userService.saveUser(user);
     }
 
-    @PutMapping("/{id}")
-public ResponseEntity<UserDTO> updateUser(
-        @PathVariable UUID id,
-        @RequestParam(required = false) String email,
-        @RequestParam(required = false) String name,
-        @RequestParam(required = false) String dob,
-        @RequestParam(required = false) MultipartFile image,
-        @RequestParam(required = false) String previousWork,
-        @RequestParam(required = false) String qualifications,
-        @RequestParam(required = false) UUID role_id
-) {
-    Optional<User> optionalUser = userService.getUserEntityById(id); 
-    if (optionalUser.isEmpty()) {
-        return ResponseEntity.notFound().build();
-    }
-
-    User user = optionalUser.get();
-    if (email != null) user.setEmail(email);
-    if (name != null) user.setName(name);
-    if (dob != null) user.setDob(dob);
-    if (previousWork != null) user.setPreviousWork(previousWork);
-    if (qualifications != null) user.setQualifications(qualifications);
-
-    if (role_id != null) {
-        Optional<Role> role = roleService.getRoleById(role_id)
-                .map(roleDTO -> new Role(roleDTO.getRoleId(), roleDTO.getRoleName()));
-        role.ifPresent(user::setRole);
-    }
-
-    try {
-        if (image != null && !image.isEmpty()) {
-            user.setImages(image.getBytes());
-        }
-    } catch (IOException e) {
-        e.printStackTrace();
-    }
-
-    User updatedUser = userService.saveUser(user);
-    UserDTO updatedUserDTO = userService.convertToDTO(updatedUser);
     
-    return ResponseEntity.ok(updatedUserDTO);
-}
-
-
-
-
     @DeleteMapping("/{id}")
-    public void deleteUser(@PathVariable UUID id) {
-        userService.deleteUser(id);
+    public ResponseEntity<Void> softDeleteUser(@PathVariable UUID id) {
+        boolean deleted = userService.deleteUser(id);
+        return deleted ? ResponseEntity.noContent().build() : ResponseEntity.notFound().build();
     }
 }

@@ -1,11 +1,11 @@
 package com.example.project_management_backend.Service;
+
 import com.example.project_management_backend.DTO.UserDTO;
 import com.example.project_management_backend.Model.Role;
 import com.example.project_management_backend.Model.User;
 import com.example.project_management_backend.Repository.UserRepository;
 
 import jakarta.transaction.Transactional;
-
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
@@ -31,6 +31,7 @@ public class UserService {
         this.roleService = roleService;
     }
 
+    
     public UserDTO convertToDTO(User user) {
         UUID roleId = (user.getRole() != null) ? user.getRole().getRoleId() : null;
         String base64Image = (user.getImages() != null)
@@ -45,78 +46,80 @@ public class UserService {
 
     @Transactional
     public List<UserDTO> getAllUsers() {
-        List<User> projects = userRepository.findByDeletedAtIsNull();
-        return projects.stream().map(this::convertToDTO).collect(Collectors.toList());
+        List<User> users = userRepository.findByDeletedAtIsNull();
+        return users.stream().map(this::convertToDTO).collect(Collectors.toList());
     }
 
-    /*public Optional<UserDTO> getUserById(UUID id) {
-        return userRepository.findById(id).map(this::convertToDTO); // ✅ Convert User -> UserDTO
-    }*/
-    public Optional<User> getUserEntityById(UUID id) {
-        return userRepository.findById(id); 
-    }
-
-    
     @Transactional
     public Optional<UserDTO> getUserById(UUID id) {
         return userRepository.findByUserIdAndDeletedAtIsNull(id)
                 .map(this::convertToDTO);
-    }    
-    
+    }
+
     public Optional<UserDTO> getUserByEmail(String email) {
         return userRepository.findByEmailAndDeletedAtIsNull(email)
                 .map(this::convertToDTO);
     }
 
-    public User saveUser(User user) {
+   
+    @Transactional
+    public User createOrUpdateUser(UUID id, String email, String password, String name, String dob, 
+                                   MultipartFile image, String previousWork, String qualifications, UUID roleId) {
+
+        
+        Optional<User> existingUser = userRepository.findByEmailAndDeletedAtIsNull(email);
+        if (existingUser.isPresent() && (id == null || !existingUser.get().getUserId().equals(id))) {
+            throw new RuntimeException("User with this email already exists!");
+        }
+
+        User user;
+
+        
+        if (id == null) {
+            user = new User();
+            user.setPassword(passwordEncoder.encode(password));
+            user.setCreatedAt(LocalDateTime.now());
+        } else {
+            
+            user = userRepository.findByUserIdAndDeletedAtIsNull(id)
+                    .orElseThrow(() -> new RuntimeException("User not found or has been deleted!"));
+        }
+
+        user.setEmail(email);
+        user.setName(name);
+        user.setDob(dob);
+        user.setPreviousWork(previousWork);
+        user.setQualifications(qualifications);
+        user.setModifiedAt(LocalDateTime.now());
+
+        
+        if (roleId != null) {
+            Optional<Role> role = roleService.getRoleById(roleId)
+                    .map(roleDTO -> new Role(roleDTO.getRoleId(), roleDTO.getRoleName()));
+            role.ifPresent(user::setRole);
+        }
+
+        
+        try {
+            if (image != null && !image.isEmpty()) {
+                user.setImages(image.getBytes());
+            }
+        } catch (IOException e) {
+            throw new RuntimeException("Error processing image", e);
+        }
+
         return userRepository.save(user);
     }
 
-    public User updateUser(UUID id, String email, String name, String dob, String previousWork, String qualifications, UUID roleId, MultipartFile image,  String password) {
-        Optional<User> optionalUser = userRepository.findById(id);
-        if (optionalUser.isPresent()) {
-            User user = optionalUser.get();
-            user.setEmail(email);
-            user.setName(name);
-            user.setDob(dob);
-            user.setPreviousWork(previousWork);
-            user.setQualifications(qualifications);
-            
-
-            if (password != null && !password.isEmpty()) {
-                user.setPassword(passwordEncoder.encode(password));
-            }
-
-            if (roleId != null) {
-                Optional<Role> role = roleService.getRoleById(roleId).map(roleDTO -> new Role(roleDTO.getRoleId(), roleDTO.getRoleName()));
-                role.ifPresent(user::setRole);
-            }
-            
-            try {
-                if (image != null && !image.isEmpty()) {
-                    user.setImages(image.getBytes());
-                }
-            } catch (IOException e) {
-                e.printStackTrace();
-            }
-            
-            return userRepository.save(user);
-        } else {
-            throw new RuntimeException("User not found with ID: " + id);
-        }
-    }
-
+    
     public boolean deleteUser(UUID id) {
-        Optional<User> userOpt = userRepository.findById(id);
+        Optional<User> userOpt = userRepository.findByUserIdAndDeletedAtIsNull(id);
         if (userOpt.isPresent()) {
             User user = userOpt.get();
-            if (user.getDeletedAt() == null) {  
-                user.setDeletedAt(LocalDateTime.now()); 
-                userRepository.save(user);
-                return true;
-            }
+            user.setDeletedAt(LocalDateTime.now());
+            userRepository.save(user);
+            return true;
         }
         return false;
-        
     }
 }
