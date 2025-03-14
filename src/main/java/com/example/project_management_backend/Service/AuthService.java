@@ -41,7 +41,7 @@ public class AuthService {
 
     public LoginResponse login(LoginRequest loginRequest) {
 
-        User user = userRepository.findByEmail(loginRequest.getEmail()).orElseThrow(() -> new RuntimeException("User not found"));
+        User user = userRepository.findByEmailAndDeletedAtIsNull(loginRequest.getEmail()).orElseThrow(() -> new RuntimeException("User not found"));
         System.out.println("Entered password:" + loginRequest.getPassword());
         System.out.println("Stored Hashed Password: " + user.getPassword());
     

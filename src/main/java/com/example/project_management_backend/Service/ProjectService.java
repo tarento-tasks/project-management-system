@@ -58,6 +58,11 @@ public class ProjectService {
         }
 
         if (!projectDTO.getLastDate().isBefore(projectDTO.getDueDate())) {    throw new IllegalArgumentException("Last date must be before due date");}
+        
+        if (projectRepository.findByTitleIgnoreCase(projectDTO.getTitle()).isPresent()) {
+            throw new IllegalArgumentException("Project title already exists. Choose a different name.");
+        }
+
 
         Project project = new Project();
         project.setTitle(projectDTO.getTitle());
@@ -81,6 +86,12 @@ public class ProjectService {
             Project project = projectOpt.get();
 
             if (!projectDTO.getLastDate().isBefore(projectDTO.getDueDate())) {    throw new IllegalArgumentException("Last date must be before due date");}
+            
+
+            if (projectRepository.findByTitleIgnoreCase(projectDTO.getTitle()).isPresent()) {
+                throw new IllegalArgumentException("Project title already exists. Choose a different name.");
+            }
+    
 
             project.setTitle(projectDTO.getTitle());
             project.setObjective(projectDTO.getObjective());

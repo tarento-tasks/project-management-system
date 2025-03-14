@@ -32,7 +32,7 @@ public class ProjectEnrollmentService {
     public ProjectEnrollment enrollStudent(ProjectEnrollmentDto dto) {
         // Get the authenticated user
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-        User student = userRepository.findByEmail(authentication.getName()).orElseThrow(() -> new RuntimeException("User not found"));
+        User student = userRepository.findByEmailAndDeletedAtIsNull(authentication.getName()).orElseThrow(() -> new RuntimeException("User not found"));
 
         if (!"STUDENT".equals(student.getRole().getRoleName())) {
             throw new AccessDeniedException("Only students can enroll in projects.");
@@ -61,7 +61,7 @@ public class ProjectEnrollmentService {
         ProjectEnrollment enrollment = getEnrollmentById(enrollmentId);
 
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-        User admin = userRepository.findByEmail(authentication.getName()).orElseThrow(() -> new RuntimeException("User not found"));
+        User admin = userRepository.findByEmailAndDeletedAtIsNull(authentication.getName()).orElseThrow(() -> new RuntimeException("User not found"));
 
         if (!"ADMIN".equals(admin.getRole().getRoleName())) {
             throw new AccessDeniedException("Only admins can approve or reject enrollments.");

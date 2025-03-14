@@ -21,7 +21,7 @@ public class Project {
     @GeneratedValue(strategy = GenerationType.AUTO)
     private UUID projectId;
 
-    @Column(nullable = false)
+    @Column(nullable = false, unique = true)
     private String title;
 
     @Column(nullable = false)

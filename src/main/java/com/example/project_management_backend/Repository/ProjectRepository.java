@@ -10,6 +10,7 @@ import java.util.Optional;
 @Repository
 public interface ProjectRepository extends JpaRepository<Project, UUID> {
     List<Project> findByDeletedAtIsNull();
+    Optional<Project> findByTitleIgnoreCase(String title);
     
     Optional<Project> findByProjectIdAndDeletedAtIsNull(UUID projectId);
 }
