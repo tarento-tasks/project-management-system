@@ -37,15 +37,15 @@ public class SecurityConfig {
                         
 
                          
-                        .requestMatchers(HttpMethod.POST, "/api/users").hasRole("ADMIN")// Create User
-                        .requestMatchers(HttpMethod.GET, "/api/users").hasRole("ADMIN") // Get All Users
-                        .requestMatchers(HttpMethod.GET, "/api/users/email/**").hasAnyRole("ADMIN","MENTOR","STUDENT") // Get User by Email
-                        .requestMatchers(HttpMethod.PUT, "/api/users/admin/**").hasRole("ADMIN") // Update Any User
-                        .requestMatchers(HttpMethod.DELETE, "/api/users/**").hasRole("ADMIN") // Delete User
+                        .requestMatchers(HttpMethod.POST, "/api/users").hasRole("ADMIN")
+                        .requestMatchers(HttpMethod.GET, "/api/users").hasRole("ADMIN") 
+                        .requestMatchers(HttpMethod.GET, "/api/users/email/**").hasAnyRole("ADMIN","MENTOR","STUDENT") 
+                        .requestMatchers(HttpMethod.PUT, "/api/users/admin/**").hasRole("ADMIN") 
+                        .requestMatchers(HttpMethod.DELETE, "/api/users/**").hasRole("ADMIN") 
 
                         
-                        .requestMatchers(HttpMethod.GET, "/api/users/**").authenticated() // Get Own Profile
-                        .requestMatchers(HttpMethod.PUT, "/api/users/**").authenticated() // Update Own Profile
+                        .requestMatchers(HttpMethod.GET, "/api/users/**").authenticated() 
+                        .requestMatchers(HttpMethod.PUT, "/api/users/**").authenticated() 
                 
                         
                         .requestMatchers("/api/projects/**").hasAnyRole("ADMIN", "MENTOR","STUDENT") 
@@ -53,17 +53,18 @@ public class SecurityConfig {
                         .requestMatchers("/api/skills/**").hasAnyRole("ADMIN","MENTOR","STUDENT")
                         
                         .requestMatchers("/api/skill-mapping/**").hasAnyRole("ADMIN","MENTOR","STUDENT") 
+                        
                         .requestMatchers("/api/project-enrollment**").permitAll() 
                         .requestMatchers("/api/project-enrollment/enroll").hasRole("STUDENT")
                         .requestMatchers("/api/project-enrollment/**").hasRole("ADMIN") 
-
+                        .requestMatchers("/api/stu-task/**").hasAnyRole("ADMIN","MENTOR","STUDENT") 
+                        .requestMatchers("/api/tasks/{taskId}/comments").authenticated() 
                         
                         .requestMatchers("/api/tasks/*/feedback").hasRole("STUDENT")
                         .requestMatchers("/api/tasks/*/feedback/**").hasRole("MENTOR")
 
                         
-                        .requestMatchers("/api/tasks/*/comments").hasRole("MENTOR")
-                        .requestMatchers("/api/tasks/*/comments/**").hasRole("STUDENT")
+                        
 
                         .anyRequest().authenticated()
                 )

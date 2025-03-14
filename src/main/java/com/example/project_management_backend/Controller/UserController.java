@@ -27,7 +27,7 @@ public class UserController {
     
     @PostMapping(consumes = "multipart/form-data")
     @PreAuthorize("hasRole('ADMIN')")
-    public ResponseEntity<UserDTO> createUser(
+    public ResponseEntity<String> createUser(
             @RequestParam String email,
             @RequestParam String password,
             @RequestParam String name,
@@ -38,7 +38,7 @@ public class UserController {
             @RequestParam UUID roleId) throws IOException {
         
         User user = userService.createUser(email, password, name, dob, image, previousWork, qualifications, roleId);
-        return ResponseEntity.ok(userService.convertToDTO(user));
+        return ResponseEntity.ok("User created successfully");
     }
 
    

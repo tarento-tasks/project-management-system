@@ -29,7 +29,7 @@ public class UserService {
         this.roleService = roleService;
     }
 
-    // ✅ **Create User (Admin Only)**
+  
     public User createUser(String email, String password, String name, String dob,
                            MultipartFile image, String previousWork, String qualifications, UUID roleId) throws IOException {
         if (userRepository.findByEmail(email).isPresent()) {
@@ -58,7 +58,7 @@ public class UserService {
         return userRepository.save(user);
     }
 
-    // ✅ **Convert User Entity to DTO**
+    
     public UserDTO convertToDTO(User user) {
         UUID roleId = (user.getRole() != null) ? user.getRole().getRoleId() : null;
         String base64Image = (user.getImages() != null)
@@ -71,7 +71,7 @@ public class UserService {
         );
     }
 
-    // ✅ **Get All Users (Admin Only)**
+   
     public List<UserDTO> getAllUsers() {
         return userRepository.findAll()
                 .stream()
@@ -79,17 +79,17 @@ public class UserService {
                 .collect(Collectors.toList());
     }
 
-    // ✅ **Get User By ID**
+  
     public Optional<UserDTO> getUserById(UUID id) {
         return userRepository.findById(id).map(this::convertToDTO);
     }
 
-    // ✅ **Get User By Email (Admin Only)**
+    
     public Optional<UserDTO> getUserByEmail(String email) {
         return userRepository.findByEmail(email).map(this::convertToDTO);
     }
 
-    // ✅ **Update User Profile (For Students & Mentors - Limited Fields)**
+   
     public User updateUser(UUID id, String dob, String previousWork, String qualifications, MultipartFile image, String password) {
         Optional<User> optionalUser = userRepository.findById(id);
         if (optionalUser.isPresent()) {
@@ -118,7 +118,7 @@ public class UserService {
         }
     }
 
-    // ✅ **Admin - Update Any User (Includes Email, Name, and Role)**
+    
     public User updateUserByAdmin(UUID id, String email, String name, String dob, String previousWork, 
                                   String qualifications, UUID roleId, MultipartFile image, String password) {
         Optional<User> optionalUser = userRepository.findById(id);
@@ -156,7 +156,7 @@ public class UserService {
         }
     }
 
-    // ✅ **Soft Delete User (Admin Only)**
+ 
     public void softDeleteUser(UUID id) {
         Optional<User> optionalUser = userRepository.findById(id);
         if (optionalUser.isPresent()) {
