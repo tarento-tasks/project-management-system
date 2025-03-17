@@ -1,5 +1,6 @@
 package com.example.project_management_backend.Controller;
 
+import com.example.project_management_backend.DTO.ApiResponse;
 import com.example.project_management_backend.DTO.ProjectDTO;
 import com.example.project_management_backend.Service.ProjectService;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -21,37 +22,37 @@ public class ProjectController {
 
     
     @GetMapping
-    @PreAuthorize("hasAnyRole('MENTOR', 'ADMIN','STUDENT')")
-    public ResponseEntity<List<ProjectDTO>> getProjects(@RequestParam(required = false) UUID id) {
-    return ResponseEntity.ok(projectService.getProjects(Optional.ofNullable(id)));
-
-
-
-}
-
+    @PreAuthorize("hasAnyRole('MENTOR', 'ADMIN', 'STUDENT')")
+    public ResponseEntity<ApiResponse<List<ProjectDTO>>> getProjects(@RequestParam(required = false) UUID id) {
+        List<ProjectDTO> projects = projectService.getProjects(Optional.ofNullable(id));
+        return ResponseEntity.ok(new ApiResponse<>(HttpStatus.OK.value(), "Projects fetched successfully", projects));
+    }
 
     
     @PostMapping
     @PreAuthorize("hasRole('ADMIN')")
-    public ResponseEntity<ProjectDTO> createOrUpdateProject(@RequestBody ProjectDTO projectDTO,
-                                                            @RequestParam(required = false) UUID id) {
+    public ResponseEntity<ApiResponse<ProjectDTO>> createOrUpdateProject(
+            @RequestBody ProjectDTO projectDTO, @RequestParam(required = false) UUID id) {
         try {
             ProjectDTO savedProject = projectService.saveOrUpdateProject(Optional.ofNullable(id), projectDTO);
-            return ResponseEntity.ok(savedProject);
+            return ResponseEntity.ok(new ApiResponse<>(HttpStatus.OK.value(), "Project saved successfully", savedProject));
         } catch (IllegalArgumentException e) {
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(null);
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                    .body(new ApiResponse<>(HttpStatus.BAD_REQUEST.value(), e.getMessage(), null));
         } catch (RuntimeException e) {
-            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(null);
+            return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                    .body(new ApiResponse<>(HttpStatus.NOT_FOUND.value(), e.getMessage(), null));
         }
     }
 
     
     @DeleteMapping("/{id}")
     @PreAuthorize("hasRole('ADMIN')")
-    public ResponseEntity<String> deleteProject(@PathVariable UUID id) {
+    public ResponseEntity<ApiResponse<Void>> deleteProject(@PathVariable UUID id) {
         if (projectService.deleteProject(id)) {
-            return ResponseEntity.ok("Project deleted successfully");
+            return ResponseEntity.ok(new ApiResponse<>(HttpStatus.OK.value(), "Project deleted successfully", null));
         }
-        return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Project not found or already deleted");
+        return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                .body(new ApiResponse<>(HttpStatus.NOT_FOUND.value(), "Project not found or already deleted", null));
     }
 }

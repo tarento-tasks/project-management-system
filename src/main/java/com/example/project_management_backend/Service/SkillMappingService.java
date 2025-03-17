@@ -1,20 +1,14 @@
 package com.example.project_management_backend.Service;
 
-
-import com.example.project_management_backend.Model.SkillMapping;
-
-import com.example.project_management_backend.Model.SkillMappingId;
 import com.example.project_management_backend.DTO.SkillMappingRequest;
+import com.example.project_management_backend.Model.SkillMapping;
+import com.example.project_management_backend.Model.SkillMappingId;
 import com.example.project_management_backend.Repository.SkillMappingRepository;
 import com.example.project_management_backend.Repository.SkillRepository;
 import com.example.project_management_backend.Repository.UserRepository;
-
 import jakarta.transaction.Transactional;
-
 import org.springframework.stereotype.Service;
-
 import java.util.List;
-
 import java.util.UUID;
 import java.util.stream.Collectors;
 
@@ -37,20 +31,22 @@ public class SkillMappingService {
                 .user(userRepository.findById(userId).orElseThrow(() -> new RuntimeException("User not found")))
                 .skill(skillRepository.findById(skillId).orElseThrow(() -> new RuntimeException("Skill not found")))
                 .build();
-    
         return skillMappingRepository.save(skillMapping);
-    }
-    
-    @Transactional
-    public List<SkillMappingRequest> getSkillMappingsByUserId(UUID userId) {
-        return skillMappingRepository.findByUser_UserId(userId).stream()
-                .map(mapping -> new SkillMappingRequest(mapping.getUser().getUserId(), mapping.getSkill().getSkillId()))
-                .collect(Collectors.toList());
     }
 
     @Transactional
-    public List<SkillMappingRequest> getSkillMappingsBySkillId(UUID skillId) {
-        return skillMappingRepository.findBySkill_SkillId(skillId).stream()
+    public List<SkillMappingRequest> getSkillMappings(UUID userId, UUID skillId) {
+        List<SkillMapping> skillMappings;
+
+        if (userId != null) {
+            skillMappings = skillMappingRepository.findByUser_UserId(userId);
+        } else if (skillId != null) {
+            skillMappings = skillMappingRepository.findBySkill_SkillId(skillId);
+        } else {
+            skillMappings = skillMappingRepository.findAll();
+        }
+
+        return skillMappings.stream()
                 .map(mapping -> new SkillMappingRequest(mapping.getUser().getUserId(), mapping.getSkill().getSkillId()))
                 .collect(Collectors.toList());
     }

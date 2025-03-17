@@ -1,16 +1,16 @@
 package com.example.project_management_backend.Controller;
 
+import com.example.project_management_backend.DTO.ApiResponse;
 import com.example.project_management_backend.DTO.UserDTO;
-import com.example.project_management_backend.Model.User;
 import com.example.project_management_backend.Service.UserService;
 
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.util.List;
-import java.util.Optional;
 import java.util.UUID;
 
 @RestController
@@ -23,28 +23,39 @@ public class UserController {
         this.userService = userService;
     }
 
-    
+  
     @GetMapping
-    @PreAuthorize("hasAnyRole('MENTOR', 'ADMIN','STUDENT')")
-    public ResponseEntity<?> getUsers(@RequestParam(required = false) UUID userId,
-                                      @RequestParam(required = false) String email) {
+    @PreAuthorize("hasAnyRole('MENTOR', 'ADMIN', 'STUDENT')")
+    public ResponseEntity<ApiResponse<?>> getUsers(@RequestParam(required = false) UUID userId,
+                                                   @RequestParam(required = false) String email) {
         if (userId != null) {
-            return userService.getUserById(userId)
-                    .map(ResponseEntity::ok)
-                    .orElse(ResponseEntity.notFound().build());
+            UserDTO user = userService.getUserById(userId).orElse(null);
+            if (user != null) {
+                return ResponseEntity.ok(new ApiResponse<>(HttpStatus.OK.value(), "User fetched successfully", user));
+            } else {
+                return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                        .body(new ApiResponse<>(HttpStatus.NOT_FOUND.value(), "User not found", null));
+            }
         }
+
         if (email != null) {
-            return userService.getUserByEmail(email)
-                    .map(ResponseEntity::ok)
-                    .orElse(ResponseEntity.notFound().build());
+            UserDTO user = userService.getUserByEmail(email).orElse(null);
+            if (user != null) {
+                return ResponseEntity.ok(new ApiResponse<>(HttpStatus.OK.value(), "User fetched successfully", user));
+            } else {
+                return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                        .body(new ApiResponse<>(HttpStatus.NOT_FOUND.value(), "User not found", null));
+            }
         }
-        return ResponseEntity.ok(userService.getAllUsers());
+
+        List<UserDTO> users = userService.getAllUsers();
+        return ResponseEntity.ok(new ApiResponse<>(HttpStatus.OK.value(), "Users fetched successfully", users));
     }
 
-    
+
     @PostMapping
-    @PreAuthorize("hasAnyRole('MENTOR', 'ADMIN','STUDENT')")
-    public ResponseEntity<?> createOrUpdateUser(
+    @PreAuthorize("hasAnyRole('MENTOR', 'ADMIN', 'STUDENT')")
+    public ResponseEntity<ApiResponse<UserDTO>> createOrUpdateUser(
             @RequestParam(required = false) UUID userId,
             @RequestParam String email,
             @RequestParam(required = false) String password,
@@ -56,18 +67,25 @@ public class UserController {
             @RequestParam(required = false) UUID roleId) {
 
         try {
-            User user = userService.createOrUpdateUser(userId, email, password, name, dob, image, previousWork, qualifications, roleId);
-            return ResponseEntity.ok(userService.convertToDTO(user));
+            UserDTO userDTO = userService.convertToDTO(
+                    userService.createOrUpdateUser(userId, email, password, name, dob, image, previousWork, qualifications, roleId)
+            );
+            return ResponseEntity.ok(new ApiResponse<>(HttpStatus.OK.value(), "User saved successfully", userDTO));
         } catch (RuntimeException e) {
-            return ResponseEntity.badRequest().body(e.getMessage());
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                    .body(new ApiResponse<>(HttpStatus.BAD_REQUEST.value(), e.getMessage(), null));
         }
     }
 
-    
+
     @DeleteMapping("/{id}")
     @PreAuthorize("hasRole('ADMIN')")
-    public ResponseEntity<Void> softDeleteUser(@PathVariable UUID id) {
+    public ResponseEntity<ApiResponse<Void>> softDeleteUser(@PathVariable UUID id) {
         boolean deleted = userService.deleteUser(id);
-        return deleted ? ResponseEntity.noContent().build() : ResponseEntity.notFound().build();
+        if (deleted) {
+            return ResponseEntity.ok(new ApiResponse<>(HttpStatus.OK.value(), "User deleted successfully", null));
+        }
+        return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                .body(new ApiResponse<>(HttpStatus.NOT_FOUND.value(), "User not found or already deleted", null));
     }
 }

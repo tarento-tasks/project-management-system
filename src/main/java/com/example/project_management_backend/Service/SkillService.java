@@ -17,34 +17,47 @@ public class SkillService {
     @Autowired
     private SkillRepository skillRepository;
 
-    public List<SkillDTO> getAllSkills() {
-        return skillRepository.findAll()
-                .stream()
-                .map(skill -> new SkillDTO(skill.getSkillId(), skill.getSkillName()))
-                .collect(Collectors.toList());
-    }
-
-    public SkillDTO getSkillById(UUID id) {
-        Optional<Skill> skill = skillRepository.findById(id);
-        return skill.map(s -> new SkillDTO(s.getSkillId(), s.getSkillName())).orElse(null);
-    }
-
+ 
     public SkillDTO createSkill(SkillDTO skillDTO) {
+        if (skillRepository.existsBySkillNameIgnoreCase(skillDTO.getSkillName())) {
+            throw new RuntimeException("Skill already exists with name: " + skillDTO.getSkillName());
+        }
+
         Skill skill = new Skill();
         skill.setSkillName(skillDTO.getSkillName());
         Skill savedSkill = skillRepository.save(skill);
         return new SkillDTO(savedSkill.getSkillId(), savedSkill.getSkillName());
     }
 
+
     public SkillDTO updateSkill(UUID id, SkillDTO skillDTO) {
         Optional<Skill> skillOpt = skillRepository.findById(id);
         if (skillOpt.isPresent()) {
-            Skill skill = skillOpt.get();
-            skill.setSkillName(skillDTO.getSkillName());
-            Skill updatedSkill = skillRepository.save(skill);
+            Skill existingSkill = skillOpt.get();
+
+            if (!existingSkill.getSkillName().equalsIgnoreCase(skillDTO.getSkillName()) &&
+                skillRepository.existsBySkillNameIgnoreCase(skillDTO.getSkillName())) {
+                throw new RuntimeException("Skill name already exists: " + skillDTO.getSkillName());
+            }
+
+            existingSkill.setSkillName(skillDTO.getSkillName());
+            Skill updatedSkill = skillRepository.save(existingSkill);
             return new SkillDTO(updatedSkill.getSkillId(), updatedSkill.getSkillName());
         }
         return null;
+    }
+
+   
+    public SkillDTO getSkillById(UUID id) {
+        Optional<Skill> skill = skillRepository.findById(id);
+        return skill.map(s -> new SkillDTO(s.getSkillId(), s.getSkillName())).orElse(null);
+    }
+
+    public List<SkillDTO> getAllSkills() {
+        return skillRepository.findAll()
+                .stream()
+                .map(skill -> new SkillDTO(skill.getSkillId(), skill.getSkillName()))
+                .collect(Collectors.toList());
     }
 
     public void deleteSkill(UUID id) {
