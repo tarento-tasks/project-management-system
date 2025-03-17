@@ -5,6 +5,8 @@ import com.example.project_management_backend.Service.ProjectService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.security.access.prepost.PreAuthorize;
+
 
 import java.util.List;
 import java.util.Optional;
@@ -32,6 +34,7 @@ public class ProjectController {
 
     // Create Project
     @PostMapping
+    @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<ProjectDTO> createProject(@RequestBody ProjectDTO projectDTO) {
         return ResponseEntity.ok(projectService.createProject(projectDTO));
     }

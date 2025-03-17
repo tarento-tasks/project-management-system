@@ -56,6 +56,11 @@ public class ProjectService {
             throw new IllegalArgumentException("Mentor not found");
         }
 
+        if (!projectDTO.getLastDate().isBefore(projectDTO.getDueDate())) {
+            throw new IllegalArgumentException("Last date must be before due date");
+        }
+
+
         Project project = new Project();
         project.setTitle(projectDTO.getTitle());
         project.setObjective(projectDTO.getObjective());
@@ -76,6 +81,11 @@ public class ProjectService {
         Optional<Project> projectOpt = projectRepository.findById(id);
         if (projectOpt.isPresent()) {
             Project project = projectOpt.get();
+
+            if (!projectDTO.getLastDate().isBefore(projectDTO.getDueDate())) {
+                throw new IllegalArgumentException("Last date must be before due date");
+            }
+
             project.setTitle(projectDTO.getTitle());
             project.setObjective(projectDTO.getObjective());
             project.setDescription(projectDTO.getDescription());

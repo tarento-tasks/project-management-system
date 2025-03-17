@@ -5,6 +5,8 @@ import com.example.project_management_backend.Service.TaskService;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
+import org.springframework.security.access.prepost.PreAuthorize;
+
 
 import java.io.IOException;
 import java.time.LocalDateTime;
@@ -23,6 +25,7 @@ public class TaskController {
 
     // ✅ Create Task with File Upload
     @PostMapping(consumes = "multipart/form-data")
+    @PreAuthorize("hasAnyRole('MENTOR', 'ADMIN')")
     public ResponseEntity<TaskDTO> createTask(
             @RequestParam("taskName") String taskName,
             @RequestParam("projectId") UUID projectId,
