@@ -44,11 +44,5 @@ public class SkillMappingController {
     
     return ResponseEntity.status(HttpStatus.CREATED).body(response);
 }
-
-
-
-
-    
-  
     
 }

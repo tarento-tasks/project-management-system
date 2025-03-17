@@ -26,52 +26,45 @@ public class TaskService {
         this.projectRepository = projectRepository;
     }
 
-    
-    public TaskDTO createTask(TaskDTO taskDTO) {
-        Project project = projectRepository.findById(taskDTO.getProjectId())
-                .orElseThrow(() -> new RuntimeException("Project not found"));
-
-        Task task = new Task();
-        task.setTaskName(taskDTO.getTaskName());
-        task.setDueDate(taskDTO.getDueDate());
-        task.setStudentStatus(taskDTO.getStudentStatus());
-        task.setCompleteStatus(taskDTO.getCompleteStatus());
-        task.setOpenStatus(taskDTO.getOpenStatus());
-        task.setTaskObjective(taskDTO.getTaskObjective());
-        task.setModifiedBy(taskDTO.getModifiedBy()); 
-        task.setCreatedAt(LocalDateTime.now());
-        task.setProject(project);
-
-       
-        task.setAttachments(taskDTO.getAttachments());
-
-        task = taskRepository.save(task);
-        return convertToDTO(task);
-    }
-
-   
     @Transactional
-    public TaskDTO updateTask(TaskDTO taskDTO) {
-        Task task = taskRepository.findById(taskDTO.getTaskId())
+    public TaskDTO createOrUpdateTask(TaskDTO taskDTO) {
+    Task task;
+
+    if (taskDTO.getTaskId() != null) {
+        // Update existing task
+        task = taskRepository.findById(taskDTO.getTaskId())
                 .orElseThrow(() -> new RuntimeException("Task not found"));
 
-        task.setTaskName(taskDTO.getTaskName());
-        task.setDueDate(taskDTO.getDueDate());
-        task.setStudentStatus(taskDTO.getStudentStatus());
-        task.setCompleteStatus(taskDTO.getCompleteStatus());
-        task.setOpenStatus(taskDTO.getOpenStatus());
-        task.setTaskObjective(taskDTO.getTaskObjective());
-        task.setModifiedBy(taskDTO.getModifiedBy());
         task.setModifiedAt(LocalDateTime.now());
-
-        
-        if (taskDTO.getAttachments() != null) {
-            task.setAttachments(taskDTO.getAttachments());
-        }
-
-        task = taskRepository.save(task);
-        return convertToDTO(task);
+    } else {
+        // Create new task
+        task = new Task();
+        task.setCreatedAt(LocalDateTime.now());
     }
+
+    // Set task properties
+    task.setTaskName(taskDTO.getTaskName());
+    task.setDueDate(taskDTO.getDueDate());
+    task.setStudentStatus(taskDTO.getStudentStatus());
+    task.setCompleteStatus(taskDTO.getCompleteStatus());
+    task.setOpenStatus(taskDTO.getOpenStatus());
+    task.setTaskObjective(taskDTO.getTaskObjective());
+    task.setModifiedBy(taskDTO.getModifiedBy());
+
+    // Set project reference
+    Project project = projectRepository.findById(taskDTO.getProjectId())
+            .orElseThrow(() -> new RuntimeException("Project not found"));
+    task.setProject(project);
+
+    // Set attachments
+    if (taskDTO.getAttachments() != null) {
+        task.setAttachments(taskDTO.getAttachments());
+    }
+
+    // Save task and return DTO
+    task = taskRepository.save(task);
+    return convertToDTO(task);
+}
 
     @Transactional
     
