@@ -30,43 +30,37 @@ public class SecurityConfig {
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(auth -> auth
 
-                        .requestMatchers("/api/auth/**").permitAll()
+                .requestMatchers("/api/auth/**").permitAll()
 
-                        .requestMatchers("/api/roles/**").hasRole("ADMIN")
+                .requestMatchers("/api/roles/**").hasRole("ADMIN")
+                
+                .requestMatchers(HttpMethod.POST, "/api/users").hasRole("ADMIN")
+                .requestMatchers(HttpMethod.GET, "/api/users").hasRole("ADMIN")
+                .requestMatchers(HttpMethod.GET, "/api/users/email/**").hasAnyRole("ADMIN", "MENTOR", "STUDENT")
+                .requestMatchers(HttpMethod.PUT, "/api/users/admin/**").hasRole("ADMIN")
+                .requestMatchers(HttpMethod.DELETE, "/api/users/**").hasRole("ADMIN")
+                
+                .requestMatchers(HttpMethod.GET, "/api/users/**").authenticated()
+                .requestMatchers(HttpMethod.PUT, "/api/users/**").authenticated()
+                
+                .requestMatchers("/api/projects/**").permitAll()
+                .requestMatchers("/api/tasks/**").hasAnyRole("ADMIN", "MENTOR", "STUDENT")
+                .requestMatchers("/api/skills/**").hasAnyRole("ADMIN", "MENTOR", "STUDENT")
+                
+                .requestMatchers("/api/skill-mapping/**").hasAnyRole("ADMIN", "MENTOR", "STUDENT")
+                
+                .requestMatchers("/api/project-enrollment/**").permitAll()  // FIXED
+                .requestMatchers("/api/project-enrollment/enroll").hasRole("STUDENT")
+                .requestMatchers("/api/project-enrollment/**").hasRole("ADMIN")
+                .requestMatchers("/api/stu-task/**").hasAnyRole("ADMIN", "MENTOR", "STUDENT")
+                
+                .requestMatchers("/api/tasks/*/comments").hasAnyRole("ADMIN", "MENTOR", "STUDENT") // FIXED
+                .requestMatchers("/api/tasks/*/feedback").hasAnyRole("ADMIN", "MENTOR", "STUDENT") // FIXED
+                                .requestMatchers("/api/project-updates/**").hasAnyRole("ADMIN", "MENTOR", "STUDENT")
 
-
-
-
-                        .requestMatchers(HttpMethod.POST, "/api/users").hasRole("ADMIN")
-                        .requestMatchers(HttpMethod.GET, "/api/users").hasRole("ADMIN")
-                        .requestMatchers(HttpMethod.GET, "/api/users/email/**").hasAnyRole("ADMIN","MENTOR","STUDENT")
-                        .requestMatchers(HttpMethod.PUT, "/api/users/admin/**").hasRole("ADMIN")
-                        .requestMatchers(HttpMethod.DELETE, "/api/users/**").hasRole("ADMIN")
-
-
-                        .requestMatchers(HttpMethod.GET, "/api/users/**").authenticated()
-                        .requestMatchers(HttpMethod.PUT, "/api/users/**").authenticated()
-
-
-                        .requestMatchers("/api/projects/**").hasAnyRole("ADMIN","MENTOR","STUDENT")
-                        .requestMatchers("/api/tasks/**").hasAnyRole("ADMIN","MENTOR","STUDENT")
-                        .requestMatchers("/api/skills/**").hasAnyRole("ADMIN","MENTOR","STUDENT")
-
-                        .requestMatchers("/api/skill-mapping/**").hasAnyRole("ADMIN","MENTOR","STUDENT")
-
-                        .requestMatchers("/api/project-enrollment**").permitAll()
-                        .requestMatchers("/api/project-enrollment/enroll").hasRole("STUDENT")
-                        .requestMatchers("/api/project-enrollment/**").hasRole("ADMIN")
-                        .requestMatchers("/api/stu-task/**").hasAnyRole("ADMIN","MENTOR","STUDENT")
-
-                        .requestMatchers("/api/tasks/**/comments").hasAnyRole("ADMIN","MENTOR","STUDENT")
-                        .requestMatchers("/api/tasks/*/feedback").hasAnyRole("ADMIN","MENTOR","STUDENT")
-
-
-
-
-
-                        .anyRequest().authenticated()
+                
+                .anyRequest().authenticated()
+                
                 )
                 .addFilterBefore(new JWTFilter(jwtUtil), UsernamePasswordAuthenticationFilter.class);
         return http.build();

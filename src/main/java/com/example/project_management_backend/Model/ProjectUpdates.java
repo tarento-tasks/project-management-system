@@ -3,7 +3,6 @@ package com.example.project_management_backend.Model;
 import jakarta.persistence.*;
 import lombok.*;
 import java.util.UUID;
-
 import java.time.LocalDateTime;
 
 @Entity
@@ -18,17 +17,16 @@ public class ProjectUpdates {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long updateId;
 
-    private UUID userId; // Foreign key
+    private UUID userId; // Foreign key (Ensure user exists)
 
     @ManyToOne
-    @JoinColumn(name = "project_id", nullable = false)
-    private Project project; // Foreign key reference to Project
+    @JoinColumn(name = "project_id", nullable = false) // Maps to Project's ID column
+    private Project projectId; // ✅ Renamed from 'project' to 'projectId'
 
     private String updateText;
 
     @Lob
-    private byte[] updateImage; // Store image as byte array
+    private byte[] updateImage; // ✅ Store PDF/Image as byte array
 
     private LocalDateTime createdAt;
 }
-

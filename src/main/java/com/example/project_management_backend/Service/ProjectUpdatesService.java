@@ -9,7 +9,6 @@ import jakarta.transaction.Transactional;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
-
 import java.io.IOException;
 import java.time.LocalDateTime;
 import java.util.List;
@@ -26,25 +25,31 @@ public class ProjectUpdatesService {
     @Autowired
     private ProjectRepository projectRepository;
 
+    // ✅ Fetch all updates
     public List<ProjectUpdatesDTO> getAllProjectUpdates() {
         List<ProjectUpdates> updates = projectUpdatesRepository.findAll();
         return updates.stream().map(this::convertToDTO).collect(Collectors.toList());
     }
+
+    // ✅ Fetch updates by projectId
     @Transactional
     public List<ProjectUpdatesDTO> getProjectUpdatesByProjectId(UUID projectId) {
-        List<ProjectUpdates> updates = projectUpdatesRepository.findByProject_ProjectId(projectId);
+        List<ProjectUpdates> updates = projectUpdatesRepository.findByProjectId_ProjectId(projectId);
         return updates.stream().map(this::convertToDTO).collect(Collectors.toList());
     }
 
+    // ✅ Create a project update (Ensure projectId exists)
     public ProjectUpdatesDTO createProjectUpdate(UUID userId, UUID projectId, String updateText, MultipartFile updateImage) throws IOException {
         Optional<Project> projectOptional = projectRepository.findById(projectId);
-        if (projectOptional.isEmpty()) {
-            throw new RuntimeException("Project not found!");
+        
+        // ✅ Ensure project exists and is not soft deleted
+        if (projectOptional.isEmpty() || projectOptional.get().getDeletedAt() != null) {
+            throw new RuntimeException("Project not found or deleted!");
         }
 
         ProjectUpdates updates = new ProjectUpdates();
         updates.setUserId(userId);
-        updates.setProject(projectOptional.get());
+        updates.setProjectId(projectOptional.get()); // ✅ Use renamed field
         updates.setUpdateText(updateText);
 
         if (updateImage != null && !updateImage.isEmpty()) {
@@ -57,13 +62,13 @@ public class ProjectUpdatesService {
         return convertToDTO(savedUpdates);
     }
 
+    // ✅ Convert Entity to DTO
     private ProjectUpdatesDTO convertToDTO(ProjectUpdates updates) {
         return new ProjectUpdatesDTO(
                 updates.getUpdateId(),
                 updates.getUserId(),
-                updates.getProject().getProjectId(),
+                updates.getProjectId().getProjectId(), // ✅ Extract UUID from Project entity
                 updates.getUpdateText(),
-                null,  // ✅ We don't send images in DTO
                 updates.getCreatedAt()
         );
     }
