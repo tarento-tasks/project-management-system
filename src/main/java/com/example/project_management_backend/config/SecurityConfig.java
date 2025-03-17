@@ -49,14 +49,16 @@ public class SecurityConfig {
                         
                         .requestMatchers("/api/skill-mapping/**").hasAnyRole("ADMIN","MENTOR","STUDENT") 
                         
-                        .requestMatchers("/api/project-enrollment**").permitAll() 
-                        .requestMatchers("/api/project-enrollment/enroll").hasRole("STUDENT")
-                        .requestMatchers("/api/project-enrollment/**").hasRole("ADMIN") 
-                        .requestMatchers("/api/stu-task/**").hasAnyRole("ADMIN","MENTOR","STUDENT") 
-                        .requestMatchers("/api/tasks/{taskId}/comments").authenticated() 
                         
-                        .requestMatchers("/api/tasks/*/feedback").hasRole("STUDENT")
-                        .requestMatchers("/api/tasks/*/feedback/**").hasRole("MENTOR")
+                        
+                        .requestMatchers(HttpMethod.POST, "/api/project-enrollment").hasAnyRole("STUDENT", "ADMIN")  
+                        .requestMatchers(HttpMethod.GET, "/api/project-enrollment").hasAnyRole("ADMIN", "STUDENT")  
+                        .requestMatchers(HttpMethod.DELETE, "/api/project-enrollment/**").hasAnyRole("STUDENT", "ADMIN")  
+
+                        
+                        .requestMatchers("/api/stu-task/**").hasAnyRole("ADMIN","MENTOR","STUDENT") 
+                        .requestMatchers("/api/tasks/**/comments").hasAnyRole("ADMIN","MENTOR","STUDENT")
+                        .requestMatchers("/api/tasks/*/feedback").hasAnyRole("ADMIN","MENTOR","STUDENT")
 
                         
                         

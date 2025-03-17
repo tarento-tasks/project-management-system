@@ -1,11 +1,15 @@
 package com.example.project_management_backend.Controller;
 
+import com.example.project_management_backend.DTO.ApiResponse;
 import com.example.project_management_backend.DTO.ProjectEnrollmentDto;
 import com.example.project_management_backend.Model.ProjectEnrollment;
 import com.example.project_management_backend.Service.ProjectEnrollmentService;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
+
+import org.springframework.security.core.context.SecurityContextHolder;
 
 import java.util.List;
 import java.util.UUID;
@@ -20,34 +24,64 @@ public class ProjectEnrollmentController {
         this.enrollmentService = enrollmentService;
     }
 
-    @PostMapping("/enroll")
-    @PreAuthorize("hasRole('STUDENT')")
-    public ResponseEntity<ProjectEnrollment> enrollStudent(@RequestBody ProjectEnrollmentDto dto) {
-        return ResponseEntity.ok(enrollmentService.enrollStudent(dto));
-    }
+   
+ 
+  
 
-    @GetMapping("/")
-    @PreAuthorize("hasRole('ADMIN')")
-    public ResponseEntity<List<ProjectEnrollment>> getAllEnrollments() {
-        return ResponseEntity.ok(enrollmentService.getAllEnrollments());
+    @PostMapping
+@PreAuthorize("hasAnyRole('STUDENT', 'ADMIN')")
+public ResponseEntity<ApiResponse<ProjectEnrollment>> createOrUpdateEnrollment(
+    @RequestParam(value = "enrollmentId", required = false) UUID enrollmentId,
+    @RequestBody ProjectEnrollmentDto dto
+) {
+    try {
+        ProjectEnrollment enrollment;
+        if (enrollmentId != null) {
+            enrollment = enrollmentService.updateEnrollmentStatus(enrollmentId, dto.getStatus());
+            return ResponseEntity.ok(new ApiResponse<>(HttpStatus.OK.value(), "Enrollment status updated successfully", enrollment));
+        } else {
+            enrollment = enrollmentService.enrollStudent(dto);
+            return ResponseEntity.ok(new ApiResponse<>(HttpStatus.OK.value(), "Enrollment created successfully", enrollment));
+        }
+    } catch (IllegalStateException e) {
+        return ResponseEntity.badRequest().body(new ApiResponse<>(HttpStatus.BAD_REQUEST.value(), e.getMessage(), null));
     }
+}
 
-    @GetMapping("/{id}")
+   
+    @GetMapping
     @PreAuthorize("hasAnyRole('ADMIN', 'STUDENT')")
-    public ResponseEntity<ProjectEnrollment> getEnrollmentById(@PathVariable UUID id) {
-        return ResponseEntity.ok(enrollmentService.getEnrollmentById(id));
+    public ResponseEntity<ApiResponse<?>> getEnrollments(
+        @RequestParam(value = "enrollmentId", required = false) UUID enrollmentId
+    ) {
+        if (enrollmentId != null) {
+            
+            ProjectEnrollment enrollment = enrollmentService.getEnrollmentById(enrollmentId);
+            return ResponseEntity.ok(
+                new ApiResponse<>(HttpStatus.OK.value(), "Enrollment fetched successfully", enrollment)
+            );
+        } else {
+           
+            if (SecurityContextHolder.getContext().getAuthentication().getAuthorities().stream()
+                .anyMatch(grantedAuthority -> grantedAuthority.getAuthority().equals("ROLE_ADMIN"))) {
+                List<ProjectEnrollment> enrollments = enrollmentService.getAllEnrollments();
+                return ResponseEntity.ok(
+                    new ApiResponse<>(HttpStatus.OK.value(), "All enrollments fetched successfully", enrollments)
+                );
+            } else {
+                return ResponseEntity.status(HttpStatus.FORBIDDEN).body(
+                    new ApiResponse<>(HttpStatus.FORBIDDEN.value(), "Access denied", null)
+                );
+            }
+        }
     }
 
-    @PutMapping("/{id}/update-status")
-    @PreAuthorize("hasRole('ADMIN')")
-    public ResponseEntity<ProjectEnrollment> updateEnrollmentStatus(@PathVariable UUID id, @RequestParam String status) {
-        return ResponseEntity.ok(enrollmentService.updateEnrollmentStatus(id, status));
-    }
-
-    @DeleteMapping("/{id}")
-    @PreAuthorize("hasRole('ADMIN')")
-    public ResponseEntity<String> softDeleteEnrollment(@PathVariable UUID id) {
-        enrollmentService.softDeleteEnrollment(id);
-        return ResponseEntity.ok("Enrollment soft deleted successfully.");
+    @DeleteMapping("/{enrollmentId}")
+    @PreAuthorize("hasAnyRole('ADMIN', 'STUDENT')")
+    public ResponseEntity<ApiResponse<Void>> softDeleteEnrollment(@PathVariable UUID enrollmentId) {
+        enrollmentService.softDeleteEnrollment(enrollmentId);
+        return ResponseEntity.ok(
+            new ApiResponse<>(HttpStatus.OK.value(), "Enrollment soft deleted successfully", null)
+        );
     }
 }

@@ -14,6 +14,7 @@ import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Optional;
 import java.util.UUID;
 
 @Service
@@ -30,16 +31,28 @@ public class ProjectEnrollmentService {
     }
 
     public ProjectEnrollment enrollStudent(ProjectEnrollmentDto dto) {
-        // Get the authenticated user
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-        User student = userRepository.findByEmailAndDeletedAtIsNull(authentication.getName()).orElseThrow(() -> new RuntimeException("User not found"));
+        User student = userRepository.findByEmailAndDeletedAtIsNull(authentication.getName())
+                .orElseThrow(() -> new RuntimeException("User not found"));
 
         if (!"STUDENT".equals(student.getRole().getRoleName())) {
             throw new AccessDeniedException("Only students can enroll in projects.");
         }
 
-        Project project = projectRepository.findById(dto.getProjectId()).orElseThrow(() -> new RuntimeException("Project not found"));
+        Project project = projectRepository.findById(dto.getProjectId())
+                .orElseThrow(() -> new RuntimeException("Project not found"));
 
+        if (project.getDeletedAt() != null) {
+            throw new RuntimeException("Cannot enroll in a deleted project.");
+        }
+
+       
+        Optional<ProjectEnrollment> existingEnrollment = enrollmentRepository.findByStudent_UserIdAndProject_ProjectIdAndDeletedAtIsNull(student.getUserId(), project.getProjectId());
+        if (existingEnrollment.isPresent()) {
+            throw new IllegalStateException("Student is already enrolled in this project.");
+        }
+
+       
         ProjectEnrollment enrollment = new ProjectEnrollment();
         enrollment.setStudent(student);
         enrollment.setProject(project);
@@ -49,19 +62,20 @@ public class ProjectEnrollmentService {
     }
 
     public List<ProjectEnrollment> getAllEnrollments() {
-        return enrollmentRepository.findByDeletedAtIsNull();
+        return enrollmentRepository.findByProject_DeletedAtIsNullAndDeletedAtIsNull();
     }
 
     public ProjectEnrollment getEnrollmentById(UUID enrollmentId) {
-        return enrollmentRepository.findByEnrollmentIdAndDeletedAtIsNull(enrollmentId)
-                .orElseThrow(() -> new RuntimeException("Enrollment not found or deleted"));
+        return enrollmentRepository.findByEnrollmentIdAndProject_DeletedAtIsNullAndDeletedAtIsNull(enrollmentId)
+                .orElseThrow(() -> new RuntimeException("Enrollment not found or project is deleted"));
     }
 
     public ProjectEnrollment updateEnrollmentStatus(UUID enrollmentId, String status) {
         ProjectEnrollment enrollment = getEnrollmentById(enrollmentId);
 
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-        User admin = userRepository.findByEmailAndDeletedAtIsNull(authentication.getName()).orElseThrow(() -> new RuntimeException("User not found"));
+        User admin = userRepository.findByEmailAndDeletedAtIsNull(authentication.getName())
+                .orElseThrow(() -> new RuntimeException("User not found"));
 
         if (!"ADMIN".equals(admin.getRole().getRoleName())) {
             throw new AccessDeniedException("Only admins can approve or reject enrollments.");

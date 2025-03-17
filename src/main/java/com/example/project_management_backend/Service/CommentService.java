@@ -34,14 +34,15 @@ public class CommentService {
 
         Comment savedComment = commentRepository.save(comment);
         return new CommentDTO(savedComment.getCommentId(), savedComment.getComment(),
-                savedComment.getTask().getTaskId(), savedComment.getUserId(), savedComment.getCreatedAt());
+                savedComment.getTask().getTaskId(), savedComment.getCreatedAt());
     }
+
     @Transactional
     public List<CommentDTO> getCommentsByTaskId(UUID taskId) {
         List<Comment> comments = commentRepository.findByTask_TaskId(taskId);
         return comments.stream()
                 .map(comment -> new CommentDTO(comment.getCommentId(), comment.getComment(),
-                        comment.getTask().getTaskId(), comment.getUserId(), comment.getCreatedAt()))
+                        comment.getTask().getTaskId(), comment.getCreatedAt()))
                 .collect(Collectors.toList());
     }
 }

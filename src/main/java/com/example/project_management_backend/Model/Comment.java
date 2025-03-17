@@ -17,10 +17,10 @@ public class Comment {
 
     @ManyToOne
     @JoinColumn(name = "task_id", nullable = false)
-    private Task task;  // Foreign key reference to Task
+    private Task task;  
 
     @Column(nullable = false)
-    private UUID userId;  // Student ID
+    private UUID userId; 
 
     @Column(nullable = false, updatable = false)
     private LocalDateTime createdAt;

@@ -1,7 +1,9 @@
 package com.example.project_management_backend.Controller;
 
+import com.example.project_management_backend.DTO.ApiResponse;
 import com.example.project_management_backend.DTO.FeedbackDTO;
 import com.example.project_management_backend.Service.FeedbackService;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
@@ -19,20 +21,24 @@ public class FeedbackController {
         this.feedbackService = feedbackService;
     }
 
-    
     @PostMapping
-    @PreAuthorize("hasRole('MENTOR')") 
-    public ResponseEntity<FeedbackDTO> addFeedback(@PathVariable UUID taskId,
-                                                   @RequestBody FeedbackDTO feedbackDTO) {
+    @PreAuthorize("hasAnyRole('MENTOR', 'ADMIN')")
+    public ResponseEntity<ApiResponse<FeedbackDTO>> addFeedback(
+        @PathVariable UUID taskId,
+        @RequestBody FeedbackDTO feedbackDTO
+    ) {
         FeedbackDTO createdFeedback = feedbackService.addFeedback(taskId, feedbackDTO.getMentorId(), feedbackDTO.getFeedback());
-        return ResponseEntity.ok(createdFeedback);
+        return ResponseEntity.ok(
+            new ApiResponse<>(HttpStatus.OK.value(), "Feedback added successfully", createdFeedback)
+        );
     }
 
-    
     @GetMapping
-    @PreAuthorize("hasRole('STUDENT')") 
-    public ResponseEntity<List<FeedbackDTO>> getFeedback(@PathVariable UUID taskId) {
+    @PreAuthorize("hasAnyRole('MENTOR', 'ADMIN','STUDENT')")
+    public ResponseEntity<ApiResponse<List<FeedbackDTO>>> getFeedback(@PathVariable UUID taskId) {
         List<FeedbackDTO> feedbackList = feedbackService.getFeedbackByTaskId(taskId);
-        return ResponseEntity.ok(feedbackList);
+        return ResponseEntity.ok(
+            new ApiResponse<>(HttpStatus.OK.value(), "Feedback fetched successfully", feedbackList)
+        );
     }
 }
