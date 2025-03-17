@@ -26,14 +26,22 @@ public class StuTaskService {
     private final UserRepository userRepository;
     private final TaskRepository taskRepository;
 
-   
     public StuTaskDTO addStuTask(StuTaskDTO dto) {
+        // Check if student exists and is not soft deleted
         User student = userRepository.findById(dto.getStudentId())
-                .orElseThrow(() -> new EntityNotFoundException("Student not found"));
+                .filter(s -> s.getDeletedAt() == null)
+                .orElseThrow(() -> new EntityNotFoundException("Student not found or has been deleted"));
 
+        // Check if task exists
         Task task = taskRepository.findById(dto.getTaskId())
                 .orElseThrow(() -> new EntityNotFoundException("Task not found"));
 
+        // Check if the mapping already exists
+        if (stuTaskRepository.existsById(new StuTaskId(dto.getStudentId(), dto.getTaskId()))) {
+            throw new IllegalStateException("Student is already assigned to this task");
+        }
+
+        // Create and save mapping
         StuTask stuTask = StuTask.builder()
                 .id(new StuTaskId(dto.getStudentId(), dto.getTaskId()))
                 .student(student)
@@ -45,6 +53,11 @@ public class StuTaskService {
     }
 
     public List<StuTaskDTO> getStudentsByTaskId(UUID taskId) {
+        // Ensure task exists before fetching students
+        if (!taskRepository.existsById(taskId)) {
+            throw new EntityNotFoundException("Task not found");
+        }
+
         List<StuTask> stuTasks = stuTaskRepository.findByTaskTaskId(taskId);
         return stuTasks.stream().map(stuTask -> {
             StuTaskDTO dto = new StuTaskDTO();
@@ -54,4 +67,3 @@ public class StuTaskService {
         }).collect(Collectors.toList());
     }
 }
-

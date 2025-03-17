@@ -17,6 +17,7 @@ public class SkillService {
     @Autowired
     private SkillRepository skillRepository;
 
+   
     public List<SkillDTO> getAllSkills() {
         return skillRepository.findAll()
                 .stream()
@@ -24,29 +25,29 @@ public class SkillService {
                 .collect(Collectors.toList());
     }
 
+   
     public SkillDTO getSkillById(UUID id) {
-        Optional<Skill> skill = skillRepository.findById(id);
-        return skill.map(s -> new SkillDTO(s.getSkillId(), s.getSkillName())).orElse(null);
+        return skillRepository.findById(id)
+                .map(skill -> new SkillDTO(skill.getSkillId(), skill.getSkillName()))
+                .orElse(null);
     }
 
-    public SkillDTO createSkill(SkillDTO skillDTO) {
-        Skill skill = new Skill();
+   
+    public SkillDTO createOrUpdateSkill(UUID id, SkillDTO skillDTO) {
+        Optional<Skill> existingSkill = skillRepository.findBySkillName(skillDTO.getSkillName());
+
+        
+        if (existingSkill.isPresent() && (id == null || !existingSkill.get().getSkillId().equals(id))) {
+            return null;
+        }
+
+        Skill skill = (id == null) ? new Skill() : skillRepository.findById(id).orElse(new Skill());
         skill.setSkillName(skillDTO.getSkillName());
         Skill savedSkill = skillRepository.save(skill);
         return new SkillDTO(savedSkill.getSkillId(), savedSkill.getSkillName());
     }
 
-    public SkillDTO updateSkill(UUID id, SkillDTO skillDTO) {
-        Optional<Skill> skillOpt = skillRepository.findById(id);
-        if (skillOpt.isPresent()) {
-            Skill skill = skillOpt.get();
-            skill.setSkillName(skillDTO.getSkillName());
-            Skill updatedSkill = skillRepository.save(skill);
-            return new SkillDTO(updatedSkill.getSkillId(), updatedSkill.getSkillName());
-        }
-        return null;
-    }
-
+    
     public void deleteSkill(UUID id) {
         skillRepository.deleteById(id);
     }
