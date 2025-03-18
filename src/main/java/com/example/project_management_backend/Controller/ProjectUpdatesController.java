@@ -24,17 +24,17 @@ public class ProjectUpdatesController {
         return ResponseEntity.ok(projectUpdatesService.getAllProjectUpdates());
     }
 
-    // ✅ Fetch updates by projectId
+  
     @GetMapping("/{projectId}")
     public ResponseEntity<List<ProjectUpdatesDTO>> getUpdatesByProject(@PathVariable UUID projectId) {
         return ResponseEntity.ok(projectUpdatesService.getProjectUpdatesByProjectId(projectId));
     }
 
-    // ✅ Create a project update (Accepts multipart data)
+   
     @PostMapping(consumes = "multipart/form-data")
     @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<ProjectUpdatesDTO> createUpdate(
-            @RequestParam UUID projectId, // ✅ Changed to @RequestParam
+            @RequestParam UUID projectId,
             @RequestParam UUID userId,
             @RequestParam String updateText,
             @RequestParam(required = false) MultipartFile updateImage) {

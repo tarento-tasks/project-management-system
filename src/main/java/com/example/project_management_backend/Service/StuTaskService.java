@@ -26,7 +26,7 @@ public class StuTaskService {
     private final UserRepository userRepository;
     private final TaskRepository taskRepository;
 
-    // Add a Student-Task Mapping
+
     public StuTaskDTO addStuTask(StuTaskDTO dto) {
         User student = userRepository.findById(dto.getStudentId())
                 .orElseThrow(() -> new EntityNotFoundException("Student not found"));
@@ -44,7 +44,7 @@ public class StuTaskService {
         return dto;
     }
 
-    // Get all students assigned to a specific task
+ 
     public List<StuTaskDTO> getStudentsByTaskId(UUID taskId) {
         List<StuTask> stuTasks = stuTaskRepository.findByTaskTaskId(taskId);
         return stuTasks.stream().map(stuTask -> {

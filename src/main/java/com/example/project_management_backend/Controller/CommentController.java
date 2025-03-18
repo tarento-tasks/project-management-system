@@ -1,13 +1,10 @@
 package com.example.project_management_backend.Controller;
 
-import com.example.project_management_backend.DTO.ApiResponse;
 import com.example.project_management_backend.DTO.CommentDTO;
 import com.example.project_management_backend.Service.CommentService;
-import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.access.prepost.PreAuthorize;
-import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.security.access.prepost.PreAuthorize;
 
 import java.util.List;
 import java.util.UUID;
@@ -24,24 +21,18 @@ public class CommentController {
 
     @PostMapping
     @PreAuthorize("hasRole('STUDENT')")
-    public ResponseEntity<ApiResponse<CommentDTO>> addComment(
-        @PathVariable UUID taskId,
-        @RequestBody CommentDTO commentDTO
-    ) {
-        
-        UUID userId = UUID.fromString(SecurityContextHolder.getContext().getAuthentication().getName());
-
-        CommentDTO createdComment = commentService.addComment(taskId, userId, commentDTO.getComment());
-        return ResponseEntity.ok(
-            new ApiResponse<>(HttpStatus.OK.value(), "Comment added successfully", createdComment)
-        );
+    public ResponseEntity<CommentDTO> addComment(@PathVariable UUID taskId,
+                                                 @RequestBody CommentDTO commentDTO) {
+        CommentDTO createdComment = commentService.addComment(taskId, commentDTO.getComment());
+        return ResponseEntity.ok(createdComment);
     }
 
+
+    
     @GetMapping
-    public ResponseEntity<ApiResponse<List<CommentDTO>>> getComments(@PathVariable UUID taskId) {
+    @PreAuthorize("hasAnyRole('MENTOR', 'ADMIN', 'STUDENT')")
+    public ResponseEntity<List<CommentDTO>> getComments(@PathVariable UUID taskId) {
         List<CommentDTO> comments = commentService.getCommentsByTaskId(taskId);
-        return ResponseEntity.ok(
-            new ApiResponse<>(HttpStatus.OK.value(), "Comments fetched successfully", comments)
-        );
+        return ResponseEntity.ok(comments);
     }
 }
