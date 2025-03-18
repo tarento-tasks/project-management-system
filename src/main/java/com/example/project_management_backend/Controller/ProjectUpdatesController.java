@@ -12,13 +12,13 @@ import java.util.List;
 import java.util.UUID;
 
 @RestController
-@RequestMapping("/api/project-updates") // ✅ Fixed base API path
+@RequestMapping("/api/project-updates") 
 public class ProjectUpdatesController {
 
     @Autowired
     private ProjectUpdatesService projectUpdatesService;
 
-    // ✅ Fetch all updates
+    
     @GetMapping
     public ResponseEntity<List<ProjectUpdatesDTO>> getAllUpdates() {
         return ResponseEntity.ok(projectUpdatesService.getAllProjectUpdates());

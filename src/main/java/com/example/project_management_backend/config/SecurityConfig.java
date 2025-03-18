@@ -30,42 +30,31 @@ public class SecurityConfig {
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS)) 
                 .authorizeHttpRequests(auth -> auth
                      
-                        .requestMatchers("/api/auth/**").permitAll() 
-                         
+                        .requestMatchers("/api/auth/**").permitAll() // Public auth endpoints
                         .requestMatchers("/api/roles/**").hasRole("ADMIN")
-                  
-                        
-
-                         
                         .requestMatchers("/api/users/**").hasAnyRole("ADMIN","MENTOR","STUDENT")
-
-                        
-                        
-                
-                        
                         .requestMatchers("/api/projects/**").hasAnyRole("ADMIN", "MENTOR","STUDENT") 
                         .requestMatchers("/api/tasks/**").hasAnyRole("ADMIN", "MENTOR") 
                         .requestMatchers("/api/skills/**").hasAnyRole("ADMIN","MENTOR","STUDENT")
-                        
                         .requestMatchers("/api/skill-mapping/**").hasAnyRole("ADMIN","MENTOR","STUDENT") 
-                        
-                        
                         
                         .requestMatchers(HttpMethod.POST, "/api/project-enrollment").hasAnyRole("STUDENT", "ADMIN")  
                         .requestMatchers(HttpMethod.GET, "/api/project-enrollment").hasAnyRole("ADMIN", "STUDENT")  
                         .requestMatchers(HttpMethod.DELETE, "/api/project-enrollment/**").hasAnyRole("STUDENT", "ADMIN")  
 
-                        
                         .requestMatchers("/api/stu-task/**").hasAnyRole("ADMIN","MENTOR","STUDENT") 
                         .requestMatchers("/api/tasks/**/comments").hasAnyRole("ADMIN","MENTOR","STUDENT")
                         .requestMatchers("/api/tasks/*/feedback").hasAnyRole("ADMIN","MENTOR","STUDENT")
-
                         
-                        
-
+                        // Fixing the error for project-skills recommendations
+                        .requestMatchers(HttpMethod.GET, "/api/project-skills/recommendations/**").hasRole("STUDENT") // Fixed path issue
+                        .requestMatchers(HttpMethod.POST, "/api/project-skills").hasRole("ADMIN")
+                        .requestMatchers(HttpMethod.GET, "/api/project-skills").hasAnyRole("STUDENT", "MENTOR", "ADMIN")
+                
                         .anyRequest().authenticated()
                 )
                 .addFilterBefore(new JWTFilter(jwtUtil), UsernamePasswordAuthenticationFilter.class); 
+        
         return http.build();
     }
 
