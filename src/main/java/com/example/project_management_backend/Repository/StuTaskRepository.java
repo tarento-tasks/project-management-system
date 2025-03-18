@@ -12,5 +12,7 @@ import java.util.UUID;
 @Repository
 public interface StuTaskRepository extends JpaRepository<StuTask, StuTaskId> {
     List<StuTask> findByTaskTaskId(UUID taskId);
+    boolean existsById_StudentIdAndId_TaskIdAndDeletedAtIsNull(UUID studentId, UUID taskId);
 }
+
 

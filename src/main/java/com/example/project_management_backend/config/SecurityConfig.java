@@ -34,7 +34,7 @@ public class SecurityConfig {
                         .requestMatchers("/api/roles/**").hasRole("ADMIN")
                         .requestMatchers("/api/users/**").hasAnyRole("ADMIN","MENTOR","STUDENT")
                         .requestMatchers("/api/projects/**").hasAnyRole("ADMIN", "MENTOR","STUDENT") 
-                        .requestMatchers("/api/tasks/**").hasAnyRole("ADMIN", "MENTOR") 
+                        .requestMatchers("/api/tasks/**").hasAnyRole("ADMIN", "MENTOR", "STUDENT")
                         .requestMatchers("/api/skills/**").hasAnyRole("ADMIN","MENTOR","STUDENT")
                         .requestMatchers("/api/skill-mapping/**").hasAnyRole("ADMIN","MENTOR","STUDENT") 
                         

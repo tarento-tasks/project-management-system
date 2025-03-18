@@ -39,7 +39,7 @@ public class JWTFilter extends OncePerRequestFilter {
 
     String token = header.replace("Bearer ", "");
 
-    // Check if token is invalidated
+  
     if (jwtUtil.isTokenInvalid(token)) {
         logger.warn("Token has been invalidated");
         response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);

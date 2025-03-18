@@ -1,19 +1,21 @@
 package com.example.project_management_backend.Controller;
 
-import com.example.project_management_backend.DTO.ApiResponse;
 import com.example.project_management_backend.DTO.TaskDTO;
 import com.example.project_management_backend.Service.TaskService;
-import org.springframework.http.HttpStatus;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
-import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
-import java.io.IOException;
+import java.io.IOException; // Correct import
 import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
+import java.time.format.DateTimeParseException;
 import java.util.List;
 import java.util.UUID;
+
+import com.example.project_management_backend.DTO.ApiResponse;
 
 @RestController
 @RequestMapping("/api/tasks")
@@ -21,104 +23,79 @@ public class TaskController {
 
     private final TaskService taskService;
 
+    // Manually inject TaskService using constructor
+    @Autowired
     public TaskController(TaskService taskService) {
         this.taskService = taskService;
     }
 
-    @PostMapping(consumes = "multipart/form-data")
-    @PreAuthorize("hasAnyRole('MENTOR', 'ADMIN')")
-    public ResponseEntity<ApiResponse<TaskDTO>> createOrUpdateTask(
-        @RequestParam(value = "taskId", required = false) UUID taskId,  
-        @RequestParam("taskName") String taskName,
-        @RequestParam("projectId") UUID projectId,
-        @RequestParam(value = "attachments", required = false) MultipartFile attachments,
-        @RequestParam(value = "dueDate", required = false) LocalDateTime dueDate,
-        @RequestParam(value = "studentStatus", required = false) String studentStatus,
-        @RequestParam(value = "completeStatus", required = false) String completeStatus,
-        @RequestParam(value = "openStatus", required = false) String openStatus,
-        @RequestParam(value = "taskObjective", required = false) String taskObjective,
-        @RequestParam(value = "modifiedBy", required = false) UUID modifiedBy
-    ) {
-        TaskDTO taskDTO = new TaskDTO();
-        taskDTO.setTaskId(taskId);  
-        taskDTO.setTaskName(taskName);
-        taskDTO.setProjectId(projectId);
-        taskDTO.setDueDate(dueDate);
-        taskDTO.setStudentStatus(studentStatus);
-        taskDTO.setCompleteStatus(completeStatus);
-        taskDTO.setOpenStatus(openStatus);
-        taskDTO.setTaskObjective(taskObjective);
-        taskDTO.setModifiedBy(modifiedBy);
+    // Create a new task (only ADMIN or assigned mentor)
+    @PostMapping
+    @PreAuthorize("hasRole('ADMIN') or @taskService.isAssignedMentor(#taskDTO.projectId)")
+    public ResponseEntity<ApiResponse<TaskDTO>> createTask(@RequestBody TaskDTO taskDTO) {
+        TaskDTO createdTask = taskService.createTask(taskDTO);
+        ApiResponse<TaskDTO> response = new ApiResponse<>(200, "Task created successfully", createdTask);
+        return ResponseEntity.ok(response);
+    }
 
-      
-        if (attachments != null && !attachments.isEmpty()) {
+    // Update a task (ADMIN, assigned mentor, or assigned student)
+    @PutMapping("/{taskId}")
+    @PreAuthorize("hasRole('ADMIN') or @taskService.isAssignedMentor(#taskId) or @taskService.isAssignedStudent(#taskId)")
+    public ResponseEntity<ApiResponse<TaskDTO>> updateTask(
+            @PathVariable UUID taskId,
+            @RequestParam(value = "taskName", required = false) String taskName,
+            @RequestParam(value = "taskObjective", required = false) String taskObjective,
+            @RequestParam(value = "dueDate", required = false) String dueDateStr, // Accept dueDate as String
+            @RequestParam(value = "completeStatus", required = false) String completeStatus,
+            @RequestParam(value = "studentStatus", required = false) String studentStatus,
+            @RequestParam(value = "attachments", required = false) MultipartFile attachments) {
+
+        TaskDTO taskDTO = new TaskDTO();
+        taskDTO.setTaskName(taskName);
+        taskDTO.setTaskObjective(taskObjective);
+
+        // Convert dueDate from String to LocalDateTime
+        if (dueDateStr != null) {
+            try {
+                LocalDateTime dueDate = LocalDateTime.parse(dueDateStr, DateTimeFormatter.ISO_LOCAL_DATE_TIME);
+                taskDTO.setDueDate(dueDate);
+            } catch (DateTimeParseException e) {
+                throw new RuntimeException("Invalid date format. Expected format: yyyy-MM-dd'T'HH:mm:ss", e);
+            }
+        }
+
+        taskDTO.setCompleteStatus(completeStatus);
+        taskDTO.setStudentStatus(studentStatus);
+
+        // Handle file upload
+        if (attachments != null) {
             try {
                 taskDTO.setAttachments(attachments.getBytes());
-            } catch (IOException e) {
-                return ResponseEntity.badRequest().body(
-                    new ApiResponse<>(HttpStatus.BAD_REQUEST.value(), "File upload failed", null)
-                );
+            } catch (IOException e) { // Correct exception
+                throw new RuntimeException("Failed to process file upload", e);
             }
         }
 
-        TaskDTO savedTask = taskService.createOrUpdateTask(taskDTO);
-        return ResponseEntity.ok(
-            new ApiResponse<>(HttpStatus.OK.value(), "Task created/updated successfully", savedTask)
-        );
+        TaskDTO updatedTask = taskService.updateTask(taskId, taskDTO);
+        ApiResponse<TaskDTO> response = new ApiResponse<>(200, "Task updated successfully", updatedTask);
+        return ResponseEntity.ok(response);
     }
 
-    @GetMapping
-    @PreAuthorize("hasAnyRole('MENTOR', 'ADMIN', 'STUDENT')")
-    public ResponseEntity<ApiResponse<?>> getTasks(
-        @RequestParam(value = "projectId", required = false) UUID projectId,
-        @RequestParam(value = "taskId", required = false) UUID taskId
-    ) {
-        if (projectId != null) {
-            
-            List<TaskDTO> tasks = taskService.getTasksByProject(projectId);
-            return ResponseEntity.ok(
-                new ApiResponse<>(HttpStatus.OK.value(), "Tasks fetched successfully", tasks)
-            );
-        } else if (taskId != null) {
-           
-            TaskDTO task = taskService.getTaskById(taskId);
-            if (task != null) {
-                return ResponseEntity.ok(
-                    new ApiResponse<>(HttpStatus.OK.value(), "Task fetched successfully", task)
-                );
-            } else {
-                return ResponseEntity.status(HttpStatus.NOT_FOUND).body(
-                    new ApiResponse<>(HttpStatus.NOT_FOUND.value(), "Task not found", null)
-                );
-            }
-        } else {
-            
-            if (SecurityContextHolder.getContext().getAuthentication().getAuthorities().stream()
-                .anyMatch(grantedAuthority -> grantedAuthority.getAuthority().equals("ROLE_ADMIN"))) {
-                List<TaskDTO> tasks = taskService.getAllTasks();
-                return ResponseEntity.ok(
-                    new ApiResponse<>(HttpStatus.OK.value(), "All tasks fetched successfully", tasks)
-                );
-            } else {
-                return ResponseEntity.status(HttpStatus.FORBIDDEN).body(
-                    new ApiResponse<>(HttpStatus.FORBIDDEN.value(), "Access denied", null)
-                );
-            }
-        }
+    // Get all tasks for a project (ADMIN, assigned mentor, or assigned student)
+    @GetMapping("/project/{projectId}")
+    @PreAuthorize("hasRole('ADMIN') or @taskService.isAssignedMentor(#projectId) or @taskService.isAssignedStudent(#projectId)")
+    public ResponseEntity<ApiResponse<List<TaskDTO>>> getTasksByProjectId(@PathVariable UUID projectId) {
+        List<TaskDTO> tasks = taskService.getTasksByProjectId(projectId);
+        ApiResponse<List<TaskDTO>> response = new ApiResponse<>(200, "Tasks retrieved successfully", tasks);
+        return ResponseEntity.ok(response);
     }
 
+    // Delete a task (only ADMIN or assigned mentor)
     @DeleteMapping("/{taskId}")
-    @PreAuthorize("hasAnyRole('MENTOR', 'ADMIN')")
+    @PreAuthorize("hasRole('ADMIN') or @taskService.isAssignedMentor(#taskId)")
     public ResponseEntity<ApiResponse<Void>> deleteTask(@PathVariable UUID taskId) {
-        boolean isDeleted = taskService.deleteTask(taskId);
-        if (isDeleted) {
-            return ResponseEntity.ok(
-                new ApiResponse<>(HttpStatus.OK.value(), "Task deleted successfully", null)
-            );
-        } else {
-            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(
-                new ApiResponse<>(HttpStatus.NOT_FOUND.value(), "Task not found", null)
-            );
-        }
+        taskService.deleteTask(taskId);
+        ApiResponse<Void> response = new ApiResponse<>(200, "Task deleted successfully", null);
+        return ResponseEntity.ok(response);
     }
 }

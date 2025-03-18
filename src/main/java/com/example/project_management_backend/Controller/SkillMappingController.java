@@ -35,10 +35,23 @@ public class SkillMappingController {
 
     @PostMapping
     @PreAuthorize("hasRole('ADMIN')")
-    public ResponseEntity<ApiResponse<SkillMappingRequest>> addSkillToUser(@RequestBody SkillMappingRequest request) {
-        SkillMapping skillMapping = skillMappingService.addSkillToUser(request.getUserId(), request.getSkillId());
+    public ResponseEntity<ApiResponse<SkillMappingRequest>> addOrUpdateSkillToUser(@RequestBody SkillMappingRequest request) {
+        SkillMapping skillMapping = skillMappingService.addOrUpdateSkillToUser(request.getUserId(), request.getSkillId());
         SkillMappingRequest responseData = new SkillMappingRequest(skillMapping.getUser().getUserId(), skillMapping.getSkill().getSkillId());
-        ApiResponse<SkillMappingRequest> response = new ApiResponse<>(200, "Skill mapping added successfully", responseData);
+        ApiResponse<SkillMappingRequest> response = new ApiResponse<>(200, "Skill mapping processed successfully", responseData);
         return ResponseEntity.ok(response);
     }
+
+
+    @DeleteMapping("/{userId}/{skillId}")
+@PreAuthorize("hasAnyRole('ADMIN', 'MENTOR', 'STUDENT')")
+public ResponseEntity<ApiResponse<Void>> deleteSkillMapping(
+        @PathVariable UUID userId, 
+        @PathVariable UUID skillId) {
+    
+    skillMappingService.deleteSkillMapping(userId, skillId);
+    ApiResponse<Void> response = new ApiResponse<>(200, "Skill mapping deleted successfully", null);
+    return ResponseEntity.ok(response);
+}
+
 }

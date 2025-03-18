@@ -1,6 +1,8 @@
 package com.example.project_management_backend.Model;
 
 
+import java.time.LocalDateTime;
+
 import jakarta.persistence.*;
 import lombok.*;
 
@@ -25,4 +27,6 @@ public class StuTask {
     @MapsId("taskId")
     @JoinColumn(name = "task_id", nullable = false)
     private Task task;
+
+    private LocalDateTime deletedAt;
 }

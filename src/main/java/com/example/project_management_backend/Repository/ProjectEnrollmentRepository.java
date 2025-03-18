@@ -11,12 +11,13 @@ import java.util.UUID;
 @Repository
 public interface ProjectEnrollmentRepository extends JpaRepository<ProjectEnrollment, UUID> {
 
-   
+    
     List<ProjectEnrollment> findByProject_DeletedAtIsNullAndDeletedAtIsNull();
 
-   
     Optional<ProjectEnrollment> findByEnrollmentIdAndProject_DeletedAtIsNullAndDeletedAtIsNull(UUID enrollmentId);
+
     Optional<ProjectEnrollment> findByStudent_UserIdAndProject_ProjectIdAndDeletedAtIsNull(UUID studentId, UUID projectId);
 
+  
+    boolean existsByStudent_UserIdAndProject_ProjectIdAndDeletedAtIsNull(UUID studentId, UUID projectId);
 }
-

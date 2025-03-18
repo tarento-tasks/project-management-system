@@ -15,5 +15,6 @@ import java.util.UUID;
 public class StuTaskId implements Serializable {
     private UUID studentId;
     private UUID taskId;
+    
 }
 

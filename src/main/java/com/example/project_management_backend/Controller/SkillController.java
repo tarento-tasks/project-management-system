@@ -43,7 +43,7 @@ public class SkillController {
     }
 
    
-    @PostMapping
+@PostMapping
 @PreAuthorize("hasRole('ADMIN')")
 public ResponseEntity<ApiResponse<SkillDTO>> createOrUpdateSkill(
         @RequestParam(value = "id", required = false) UUID id,

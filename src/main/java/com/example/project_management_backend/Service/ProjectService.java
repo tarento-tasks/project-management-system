@@ -23,7 +23,6 @@ public class ProjectService {
     @Autowired
     private UserRepository userRepository;
 
-    // Convert entity to DTO
     private ProjectDTO convertToDTO(Project project) {
         ProjectDTO dto = new ProjectDTO();
         dto.setProjectId(project.getProjectId());
@@ -56,6 +55,11 @@ public class ProjectService {
    
     @Transactional
     public ProjectDTO saveOrUpdateProject(Optional<UUID> projectId, ProjectDTO projectDTO) {
+
+        
+        if (projectRepository.findByTitleIgnoreCase(projectDTO.getTitle()).isPresent()) {
+            throw new IllegalArgumentException("Project title already exists. Choose a different name.");
+        }
         Project project = projectId.flatMap(projectRepository::findById)
                 .filter(p -> p.getDeletedAt() == null)
                 .orElse(new Project()); 
@@ -67,9 +71,7 @@ public class ProjectService {
         
                 if (!projectDTO.getLastDate().isBefore(projectDTO.getDueDate())) {    throw new IllegalArgumentException("Last date must be before due date");}
         
-                if (projectRepository.findByTitleIgnoreCase(projectDTO.getTitle()).isPresent()) {
-                    throw new IllegalArgumentException("Project title already exists. Choose a different name.");
-                }
+                
 
         project.setTitle(projectDTO.getTitle());
         project.setObjective(projectDTO.getObjective());

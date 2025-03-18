@@ -47,10 +47,13 @@ public class ProjectEnrollmentService {
         }
 
        
-        Optional<ProjectEnrollment> existingEnrollment = enrollmentRepository.findByStudent_UserIdAndProject_ProjectIdAndDeletedAtIsNull(student.getUserId(), project.getProjectId());
-        if (existingEnrollment.isPresent()) {
-            throw new IllegalStateException("Student is already enrolled in this project.");
-        }
+         // Check if the student is already enrolled in the project
+         boolean isAlreadyEnrolled = enrollmentRepository.existsByStudent_UserIdAndProject_ProjectIdAndDeletedAtIsNull(
+            student.getUserId(), project.getProjectId());
+
+     if (isAlreadyEnrolled) {
+        throw new IllegalStateException("Student is already enrolled in this project.");
+    }
 
        
         ProjectEnrollment enrollment = new ProjectEnrollment();

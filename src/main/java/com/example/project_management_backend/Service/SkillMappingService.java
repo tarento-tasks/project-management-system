@@ -33,31 +33,33 @@ public class SkillMappingService {
         this.skillRepository = skillRepository;
     }
 
-    public SkillMapping addSkillToUser(UUID userId, UUID skillId) {
-    User user = userRepository.findById(userId)
-            .filter(u -> u.getDeletedAt() == null) 
-            .orElseThrow(() -> new ResponseStatusException(HttpStatus.BAD_REQUEST, "User not found or is deleted"));
+    @Transactional
+    public SkillMapping addOrUpdateSkillToUser(UUID userId, UUID skillId) {
+        User user = userRepository.findById(userId)
+                .filter(u -> u.getDeletedAt() == null)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.BAD_REQUEST, "User not found or is deleted"));
+        
+        Skill skill = skillRepository.findById(skillId)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.BAD_REQUEST, "Skill not found"));
+        
+        SkillMappingId id = new SkillMappingId(userId, skillId);
+        
+        Optional<SkillMapping> existingMapping = skillMappingRepository.findById(id);
+        
+        if (existingMapping.isPresent()) {
+            return existingMapping.get();  
+        }
 
-    Skill skill = skillRepository.findById(skillId)
-            .orElseThrow(() -> new ResponseStatusException(HttpStatus.BAD_REQUEST, "Skill not found"));
 
-    SkillMappingId id = new SkillMappingId(userId, skillId);
+        SkillMapping skillMapping = SkillMapping.builder()
+                .id(id)
+                .user(user)
+                .skill(skill)
+                .build();
 
- 
-    if (skillMappingRepository.existsById(id)) {
-        throw new ResponseStatusException(HttpStatus.CONFLICT, "Skill mapping already exists");
+        return skillMappingRepository.save(skillMapping);
     }
 
-    SkillMapping skillMapping = SkillMapping.builder()
-            .id(id)
-            .user(user)
-            .skill(skill)
-            .build();
-
-    return skillMappingRepository.save(skillMapping);
-}
-
-    
     @Transactional
     public List<SkillMappingRequest> getSkillMappings(Optional<UUID> userId, Optional<UUID> skillId) {
         if (userId.isPresent()) {
@@ -73,4 +75,17 @@ public class SkillMappingService {
                 .map(mapping -> new SkillMappingRequest(mapping.getUser().getUserId(), mapping.getSkill().getSkillId()))
                 .collect(Collectors.toList());
     }
+
+   
+    @Transactional
+public void deleteSkillMapping(UUID userId, UUID skillId) {
+    SkillMappingId id = new SkillMappingId(userId, skillId);
+    
+    if (!skillMappingRepository.existsById(id)) {
+        throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Skill mapping not found");
+    }
+    
+    skillMappingRepository.deleteById(id);
+}
+
 }
