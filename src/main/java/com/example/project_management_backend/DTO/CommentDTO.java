@@ -8,15 +8,15 @@ public class CommentDTO {
     private UUID commentId;
     private String comment;
     private UUID taskId;
-    private UUID userId;
+   // private UUID userId;
     private LocalDateTime createdAt;
 
     // Constructor
-    public CommentDTO(UUID commentId, String comment, UUID taskId, UUID userId, LocalDateTime createdAt) {
+    public CommentDTO(UUID commentId, String comment, UUID taskId,  LocalDateTime createdAt) {
         this.commentId = commentId;
         this.comment = comment;
         this.taskId = taskId;
-        this.userId = userId;
+        //this.userId = userId;
         this.createdAt = createdAt;
     }
 
@@ -45,13 +45,13 @@ public class CommentDTO {
         this.taskId = taskId;
     }
 
-    public UUID getUserId() {
+   /* public UUID getUserId() {
         return userId;
     }
 
     public void setUserId(UUID userId) {
         this.userId = userId;
-    }
+    }*/
 
     public LocalDateTime getCreatedAt() {
         return createdAt;

@@ -24,7 +24,7 @@ public class CommentController {
     @PreAuthorize("hasRole('STUDENT')")
     public ResponseEntity<CommentDTO> addComment(@PathVariable UUID taskId,
                                                  @RequestBody CommentDTO commentDTO) {
-        CommentDTO createdComment = commentService.addComment(taskId, commentDTO.getUserId(), commentDTO.getComment());
+        CommentDTO createdComment = commentService.addComment(taskId, commentDTO.getComment());
         return ResponseEntity.ok(createdComment);
     }
 

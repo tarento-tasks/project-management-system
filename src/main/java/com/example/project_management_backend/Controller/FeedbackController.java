@@ -25,7 +25,7 @@ public class FeedbackController {
 
     public ResponseEntity<FeedbackDTO> addFeedback(@PathVariable UUID taskId,
                                                    @RequestBody FeedbackDTO feedbackDTO) {
-        FeedbackDTO createdFeedback = feedbackService.addFeedback(taskId, feedbackDTO.getMentorId(), feedbackDTO.getFeedback());
+        FeedbackDTO createdFeedback = feedbackService.addFeedback(taskId, feedbackDTO.getFeedback());
         return ResponseEntity.ok(createdFeedback);
     }
 

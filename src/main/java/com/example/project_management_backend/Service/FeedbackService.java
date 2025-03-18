@@ -23,25 +23,25 @@ public class FeedbackService {
         this.taskRepository = taskRepository;
     }
 
-    public FeedbackDTO addFeedback(UUID taskId, UUID mentorId, String feedbackText) {
+    public FeedbackDTO addFeedback(UUID taskId, String feedbackText) {
         Task task = taskRepository.findById(taskId)
                 .orElseThrow(() -> new RuntimeException("Task not found"));
 
         Feedback feedback = new Feedback();
         feedback.setTask(task);
-        feedback.setMentorId(mentorId);
+       // feedback.setMentorId(mentorId);
         feedback.setFeedback(feedbackText);
 
         Feedback savedFeedback = feedbackRepository.save(feedback);
         return new FeedbackDTO(savedFeedback.getFeedbackId(), savedFeedback.getFeedback(),
-                savedFeedback.getTask().getTaskId(), savedFeedback.getMentorId(), savedFeedback.getCreatedAt());
+                savedFeedback.getTask().getTaskId(),  savedFeedback.getCreatedAt());
     }
     @Transactional
     public List<FeedbackDTO> getFeedbackByTaskId(UUID taskId) {
         List<Feedback> feedbacks = feedbackRepository.findByTask_TaskId(taskId);
         return feedbacks.stream()
                 .map(feedback -> new FeedbackDTO(feedback.getFeedbackId(), feedback.getFeedback(),
-                        feedback.getTask().getTaskId(), feedback.getMentorId(), feedback.getCreatedAt()))
+                        feedback.getTask().getTaskId(),feedback.getCreatedAt()))
                 .collect(Collectors.toList());
     }
 }

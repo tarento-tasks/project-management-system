@@ -23,25 +23,25 @@ public class CommentService {
         this.taskRepository = taskRepository;
     }
 
-    public CommentDTO addComment(UUID taskId, UUID userId, String commentText) {
+    public CommentDTO addComment(UUID taskId, String commentText) {
         Task task = taskRepository.findById(taskId)
                 .orElseThrow(() -> new RuntimeException("Task not found"));
 
         Comment comment = new Comment();
         comment.setTask(task);
-        comment.setUserId(userId);
+        //comment.setUserId(userId);
         comment.setComment(commentText);
 
         Comment savedComment = commentRepository.save(comment);
         return new CommentDTO(savedComment.getCommentId(), savedComment.getComment(),
-                savedComment.getTask().getTaskId(), savedComment.getUserId(), savedComment.getCreatedAt());
+                savedComment.getTask().getTaskId(),  savedComment.getCreatedAt());
     }
     @Transactional
     public List<CommentDTO> getCommentsByTaskId(UUID taskId) {
         List<Comment> comments = commentRepository.findByTask_TaskId(taskId);
         return comments.stream()
                 .map(comment -> new CommentDTO(comment.getCommentId(), comment.getComment(),
-                        comment.getTask().getTaskId(), comment.getUserId(), comment.getCreatedAt()))
+                        comment.getTask().getTaskId(),  comment.getCreatedAt()))
                 .collect(Collectors.toList());
     }
 }

@@ -8,15 +8,15 @@ public class FeedbackDTO {
     private UUID feedbackId;
     private String feedback;
     private UUID taskId;
-    private UUID mentorId;
+    //private UUID mentorId;
     private LocalDateTime createdAt;
 
     // Constructor
-    public FeedbackDTO(UUID feedbackId, String feedback, UUID taskId, UUID mentorId, LocalDateTime createdAt) {
+    public FeedbackDTO(UUID feedbackId, String feedback, UUID taskId, LocalDateTime createdAt) {
         this.feedbackId = feedbackId;
         this.feedback = feedback;
         this.taskId = taskId;
-        this.mentorId = mentorId;
+        //this.mentorId = mentorId;
         this.createdAt = createdAt;
     }
 
@@ -45,14 +45,14 @@ public class FeedbackDTO {
         this.taskId = taskId;
     }
 
-    public UUID getMentorId() {
+  /*  public UUID getMentorId() {
         return mentorId;
     }
 
     public void setMentorId(UUID mentorId) {
         this.mentorId = mentorId;
     }
-
+*/
     public LocalDateTime getCreatedAt() {
         return createdAt;
     }
