@@ -39,7 +39,7 @@ public class ProjectUpdatesService {
     }
 
     // ✅ Create a project update (Ensure projectId exists)
-    public ProjectUpdatesDTO createProjectUpdate(UUID userId, UUID projectId, String updateText, MultipartFile updateImage) throws IOException {
+    public ProjectUpdatesDTO createProjectUpdate( UUID projectId, String updateText, MultipartFile updateImage) throws IOException {
         Optional<Project> projectOptional = projectRepository.findById(projectId);
         
         // ✅ Ensure project exists and is not soft deleted
@@ -48,7 +48,7 @@ public class ProjectUpdatesService {
         }
 
         ProjectUpdates updates = new ProjectUpdates();
-        updates.setUserId(userId);
+        //updates.setUserId(userId);
         updates.setProjectId(projectOptional.get()); // ✅ Use renamed field
         updates.setUpdateText(updateText);
 
@@ -66,7 +66,7 @@ public class ProjectUpdatesService {
     private ProjectUpdatesDTO convertToDTO(ProjectUpdates updates) {
         return new ProjectUpdatesDTO(
                 updates.getUpdateId(),
-                updates.getUserId(),
+                //updates.getUserId(),
                 updates.getProjectId().getProjectId(), // ✅ Extract UUID from Project entity
                 updates.getUpdateText(),
                 updates.getCreatedAt()

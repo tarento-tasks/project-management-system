@@ -35,12 +35,12 @@ public class ProjectUpdatesController {
     @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<ProjectUpdatesDTO> createUpdate(
             @RequestParam UUID projectId, // ✅ Changed to @RequestParam
-            @RequestParam UUID userId,
+            //@RequestParam UUID userId,
             @RequestParam String updateText,
             @RequestParam(required = false) MultipartFile updateImage) {
 
         try {
-            ProjectUpdatesDTO createdUpdate = projectUpdatesService.createProjectUpdate(userId, projectId, updateText, updateImage);
+            ProjectUpdatesDTO createdUpdate = projectUpdatesService.createProjectUpdate( projectId, updateText, updateImage);
             return ResponseEntity.ok(createdUpdate);
         } catch (IOException e) {
             return ResponseEntity.badRequest().body(null);

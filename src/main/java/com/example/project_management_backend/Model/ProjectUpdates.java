@@ -17,7 +17,7 @@ public class ProjectUpdates {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long updateId;
 
-    private UUID userId; // Foreign key (Ensure user exists)
+    //private UUID userId; // Foreign key (Ensure user exists)
 
     @ManyToOne
     @JoinColumn(name = "project_id", nullable = false) // Maps to Project's ID column
