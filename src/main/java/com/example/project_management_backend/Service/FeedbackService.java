@@ -7,6 +7,9 @@ import com.example.project_management_backend.Repository.FeedbackRepository;
 import com.example.project_management_backend.Repository.TaskRepository;
 import jakarta.transaction.Transactional;
 import org.springframework.stereotype.Service;
+import com.example.project_management_backend.Exception.ResourceNotFoundException;
+import java.util.Optional;
+
 
 import java.util.List;
 import java.util.UUID;
@@ -25,7 +28,8 @@ public class FeedbackService {
 
     public FeedbackDTO addFeedback(UUID taskId, String feedbackText) {
         Task task = taskRepository.findById(taskId)
-                .orElseThrow(() -> new RuntimeException("Task not found"));
+                .orElseThrow(() -> new ResourceNotFoundException("Task not found with ID: " + taskId));
+
 
         Feedback feedback = new Feedback();
         feedback.setTask(task);
@@ -38,6 +42,12 @@ public class FeedbackService {
     }
     @Transactional
     public List<FeedbackDTO> getFeedbackByTaskId(UUID taskId) {
+
+        boolean exists = taskRepository.existsById(taskId);
+        if (!exists) {
+            throw new ResourceNotFoundException("Task not found with ID: " + taskId);
+        }
+
         List<Feedback> feedbacks = feedbackRepository.findByTask_TaskId(taskId);
         return feedbacks.stream()
                 .map(feedback -> new FeedbackDTO(feedback.getFeedbackId(), feedback.getFeedback(),

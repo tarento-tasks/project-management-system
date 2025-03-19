@@ -7,6 +7,11 @@ import com.example.project_management_backend.Repository.CommentRepository;
 import com.example.project_management_backend.Repository.TaskRepository;
 import jakarta.transaction.Transactional;
 import org.springframework.stereotype.Service;
+import com.example.project_management_backend.Exception.ResourceNotFoundException;
+import java.util.Optional;
+import com.example.project_management_backend.Exception.AccessDeniedException;
+
+
 
 import java.util.List;
 import java.util.UUID;
@@ -25,7 +30,8 @@ public class CommentService {
 
     public CommentDTO addComment(UUID taskId, String commentText) {
         Task task = taskRepository.findById(taskId)
-                .orElseThrow(() -> new RuntimeException("Task not found"));
+                .orElseThrow(() -> new ResourceNotFoundException("Task not found with ID: " + taskId));
+
 
         Comment comment = new Comment();
         comment.setTask(task);
@@ -38,6 +44,14 @@ public class CommentService {
     }
     @Transactional
     public List<CommentDTO> getCommentsByTaskId(UUID taskId) {
+
+        Optional<Task> taskOptional = taskRepository.findById(taskId);
+        if (taskOptional.isEmpty() || taskOptional.get().getDeletedAt() != null) {
+            throw new ResourceNotFoundException("Task not found or has been deleted!");
+        }
+
+
+
         List<Comment> comments = commentRepository.findByTask_TaskId(taskId);
         return comments.stream()
                 .map(comment -> new CommentDTO(comment.getCommentId(), comment.getComment(),
