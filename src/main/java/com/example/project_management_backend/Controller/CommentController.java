@@ -19,7 +19,7 @@ public class CommentController {
         this.commentService = commentService;
     }
 
-    // Student: Add Comment
+   
     @PostMapping
     @PreAuthorize("hasRole('STUDENT')")
     public ResponseEntity<CommentDTO> addComment(@PathVariable UUID taskId,
@@ -29,7 +29,7 @@ public class CommentController {
     }
 
 
-    // Mentor: Get Comments by Task ID
+  
     @GetMapping
 
     public ResponseEntity<List<CommentDTO>> getComments(@PathVariable UUID taskId) {

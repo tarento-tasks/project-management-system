@@ -100,7 +100,7 @@ public class ProjectSkillMappingService {
         return new ApiResponse<>(HttpStatus.OK.value(), "Recommended projects", projectDTOs);
     }
     public ApiResponse<List<User>> getRecommendedStudentsForProject(UUID projectId) {
-        // Fetch required skills for the project
+     
         List<UUID> requiredSkillIds = projectSkillMappingRepository.findByProject_ProjectId(projectId)
                 .stream()
                 .map(mapping -> mapping.getSkill().getSkillId())
@@ -110,36 +110,36 @@ public class ProjectSkillMappingService {
             return new ApiResponse<>(HttpStatus.OK.value(), "No skills required for this project", List.of());
         }
 
-        // Fetch students who have sent an enrollment request for the project
+       
         List<ProjectEnrollment> enrollments = projectEnrollmentRepository.findByProject_ProjectIdAndStatus(projectId, "PENDING");
 
-        // Extract students from enrollments
+ 
         List<User> students = enrollments.stream()
                 .map(ProjectEnrollment::getStudent)
                 .collect(Collectors.toList());
 
-        // Calculate compatibility and sort students
+    
         List<User> recommendedStudents = students.stream()
-                .filter(student -> student.getDeletedAt() == null) // Filter out deleted students
+                .filter(student -> student.getDeletedAt() == null) 
                 .map(student -> {
-                    // Fetch student's skills
+                   
                     List<UUID> studentSkillIds = skillMappingRepository.findByUser_UserId(student.getUserId())
                             .stream()
                             .map(mapping -> mapping.getSkill().getSkillId())
                             .collect(Collectors.toList());
 
-                    // Calculate number of matching skills
+                    
                     long matchCount = studentSkillIds.stream()
                             .filter(requiredSkillIds::contains)
                             .count();
 
-                    // Create a pair of student and match count for sorting
+                   
                     return new AbstractMap.SimpleEntry<>(student, matchCount);
                 })
-                .filter(entry -> entry.getValue() > 0) // Filter students with at least one matching skill
-                .sorted((e1, e2) -> Long.compare(e2.getValue(), e1.getValue())) // Sort by match count (descending)
-                .limit(10) // Limit to top 10 students
-                .map(AbstractMap.SimpleEntry::getKey) // Extract the student from the pair
+                .filter(entry -> entry.getValue() > 0) 
+                .sorted((e1, e2) -> Long.compare(e2.getValue(), e1.getValue())) 
+                .limit(10) 
+                .map(AbstractMap.SimpleEntry::getKey) 
                 .collect(Collectors.toList());
 
         return new ApiResponse<>(HttpStatus.OK.value(), "Recommended students fetched successfully", recommendedStudents);

@@ -19,7 +19,7 @@ public class FeedbackController {
         this.feedbackService = feedbackService;
     }
 
-    // Mentor: Post Feedback
+  
     @PostMapping
     @PreAuthorize("hasRole('MENTOR', 'ADMIN')")
 
@@ -29,7 +29,7 @@ public class FeedbackController {
         return ResponseEntity.ok(createdFeedback);
     }
 
-    // Student: Get Feedback by Task ID
+ 
     @GetMapping
     public ResponseEntity<List<FeedbackDTO>> getFeedback(@PathVariable UUID taskId) {
         List<FeedbackDTO> feedbackList = feedbackService.getFeedbackByTaskId(taskId);
