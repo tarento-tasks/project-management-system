@@ -23,4 +23,10 @@ public class StuTask {
     @MapsId("taskId")
     @JoinColumn(name = "task_id", nullable = false)
     private Task task;
+
+    public StuTask(User student, Task task) {
+        this.id = new StuTaskId(student.getUserId(), task.getTaskId()); // Initializes composite key
+        this.student = student;
+        this.task = task;
+    }
 }

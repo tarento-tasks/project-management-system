@@ -12,5 +12,7 @@ import java.util.UUID;
 @Repository
 public interface StuTaskRepository extends JpaRepository<StuTask, StuTaskId> {
     List<StuTask> findByTaskTaskId(UUID taskId);
+    List<StuTask> findByStudentUserId(UUID studentId);
+    boolean existsByStudent_UserIdAndTask_TaskId(UUID studentId, UUID taskId);
 }
 

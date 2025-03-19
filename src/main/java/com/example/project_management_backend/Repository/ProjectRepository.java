@@ -12,4 +12,6 @@ public interface ProjectRepository extends JpaRepository<Project, UUID> {
     List<Project> findByDeletedAtIsNull();
     
     Optional<Project> findByProjectIdAndDeletedAtIsNull(UUID projectId);
+    boolean existsByTitleAndRepoAndDeletedAtIsNull(String title, String repo);
+
 }

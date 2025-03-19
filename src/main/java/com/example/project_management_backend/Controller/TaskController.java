@@ -2,9 +2,11 @@ package com.example.project_management_backend.Controller;
 
 import com.example.project_management_backend.DTO.TaskDTO;
 import com.example.project_management_backend.Service.TaskService;
+import com.example.project_management_backend.Exception.ResourceNotFoundException;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
+import org.springframework.http.HttpStatus;
 
 import java.io.IOException;
 import java.time.LocalDateTime;
@@ -21,108 +23,73 @@ public class TaskController {
         this.taskService = taskService;
     }
 
-    
-    @PostMapping(consumes = "multipart/form-data")
-    public ResponseEntity<TaskDTO> createTask(
-            @RequestParam("taskName") String taskName,
-            @RequestParam("projectId") UUID projectId,
-            @RequestParam(value = "attachments", required = false) MultipartFile attachments,
-            @RequestParam(value = "dueDate", required = false) LocalDateTime dueDate,
-            @RequestParam(value = "studentStatus", required = false) String studentStatus,
-            @RequestParam(value = "completeStatus", required = false) String completeStatus,
-            @RequestParam(value = "openStatus", required = false) String openStatus,
-            @RequestParam(value = "taskObjective", required = false) String taskObjective,
-            @RequestParam(value = "modifiedBy", required = false) UUID modifiedBy
-    ) {
-        TaskDTO taskDTO = new TaskDTO();
-        taskDTO.setTaskName(taskName);
-        taskDTO.setProjectId(projectId);
-        taskDTO.setDueDate(dueDate);
-        taskDTO.setStudentStatus(studentStatus);
-        taskDTO.setCompleteStatus(completeStatus);
-        taskDTO.setOpenStatus(openStatus);
-        taskDTO.setTaskObjective(taskObjective);
-        taskDTO.setModifiedBy(modifiedBy);
+    // ✅ **Create or update a task**
+    @PostMapping("/save")
+    public ResponseEntity<TaskDTO> createOrUpdateTask(@RequestBody TaskDTO taskDTO) {
+        try {
+            TaskDTO savedTask = taskService.createOrUpdateTask(taskDTO);
+            return ResponseEntity.status(HttpStatus.CREATED).body(savedTask);
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(null);
+        }
+    }
 
-       
-        if (attachments != null && !attachments.isEmpty()) {
-            try {
-                taskDTO.setAttachments(attachments.getBytes());
-            } catch (IOException e) {
-                return ResponseEntity.badRequest().body(null);
+    // ✅ **Unified GET API for all task queries**
+    @GetMapping
+    public ResponseEntity<?> getTasks(
+            @RequestParam(required = false) UUID taskId,
+            @RequestParam(required = false) UUID projectId) {
+        try {
+            if (taskId != null) {
+                // Fetch a single task by ID
+                return ResponseEntity.ok(taskService.getTaskById(taskId));
+            } else if (projectId != null) {
+                // Fetch tasks by project ID
+                return ResponseEntity.ok(taskService.getTasksByProject(projectId));
+            } else {
+                // Fetch all tasks
+                return ResponseEntity.ok(taskService.getAllTasks());
             }
+        } catch (ResourceNotFoundException e) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Resource not found");
+        }
+    }
+
+    @PutMapping("/update/{taskId}")
+public ResponseEntity<TaskDTO> updateStudentTask(
+        @PathVariable UUID taskId,
+        @RequestParam(required = false) String studentStatus,
+        @RequestParam(required = false) String taskName,
+        @RequestParam(required = false) LocalDateTime dueDate,
+        @RequestParam(required = false) String completeStatus,
+        @RequestParam(required = false) String openStatus,
+        @RequestParam(required = false) String taskObjective,
+        @RequestParam(required = false) MultipartFile attachments) throws IOException{
+    
+        byte[] attachmentBytes = null;
+        
+        // Convert MultipartFile to byte[] if a file is provided
+        if (attachments != null && !attachments.isEmpty()) {
+            attachmentBytes = attachments.getBytes();
         }
 
-        TaskDTO createdTask = taskService.createTask(taskDTO);
-        return ResponseEntity.ok(createdTask);
-    }
+        // Call service method to update task
+        TaskDTO updatedTask = taskService.updateTask(taskId, studentStatus, taskName, dueDate, completeStatus, openStatus, taskObjective, attachmentBytes);
 
-    
-    @GetMapping("/project/{projectId}")
-    public ResponseEntity<List<TaskDTO>> getTasksByProject(@PathVariable UUID projectId) {
-        List<TaskDTO> tasks = taskService.getTasksByProject(projectId);
-        return ResponseEntity.ok(tasks);
-    }
+        // Return the updated task
+        return ResponseEntity.ok(updatedTask);
+
+}
 
 
-    
-    @GetMapping
-    public ResponseEntity<List<TaskDTO>> getAllTasks() {
-        List<TaskDTO> tasks = taskService.getAllTasks();
-        return ResponseEntity.ok(tasks);
-    }
-
-    
+    // ✅ **Soft delete a task**
     @DeleteMapping("/{taskId}")
     public ResponseEntity<String> deleteTask(@PathVariable UUID taskId) {
-        boolean isDeleted = taskService.deleteTask(taskId);
-        return isDeleted ? ResponseEntity.ok("Task deleted successfully"): ResponseEntity.notFound().build();
-    }
-
-
-    
-    @GetMapping("/{taskId}")
-    public ResponseEntity<TaskDTO> getTaskById(@PathVariable UUID taskId) {
-        TaskDTO task = taskService.getTaskById(taskId);
-        return (task != null) ? ResponseEntity.ok(task) : ResponseEntity.notFound().build();
-    }
-
-
-    
-    @PutMapping(value = "/{taskId}", consumes = "multipart/form-data")
-    public ResponseEntity<TaskDTO> updateTask(
-            @PathVariable UUID taskId,
-            @RequestParam("taskName") String taskName,
-            @RequestParam("projectId") UUID projectId,
-            @RequestParam(value = "attachments", required = false) MultipartFile attachments,
-            @RequestParam(value = "dueDate", required = false) LocalDateTime dueDate,
-            @RequestParam(value = "studentStatus", required = false) String studentStatus,
-            @RequestParam(value = "completeStatus", required = false) String completeStatus,
-            @RequestParam(value = "openStatus", required = false) String openStatus,
-            @RequestParam(value = "taskObjective", required = false) String taskObjective,
-            @RequestParam(value = "modifiedBy", required = false) UUID modifiedBy
-    ) {
-        TaskDTO taskDTO = new TaskDTO();
-        taskDTO.setTaskId(taskId);
-        taskDTO.setTaskName(taskName);
-        taskDTO.setProjectId(projectId);
-        taskDTO.setDueDate(dueDate);
-        taskDTO.setStudentStatus(studentStatus);
-        taskDTO.setCompleteStatus(completeStatus);
-        taskDTO.setOpenStatus(openStatus);
-        taskDTO.setTaskObjective(taskObjective);
-        taskDTO.setModifiedBy(modifiedBy);
-
-      
-        if (attachments != null && !attachments.isEmpty()) {
-            try {
-                taskDTO.setAttachments(attachments.getBytes());
-            } catch (IOException e) {
-                return ResponseEntity.badRequest().body(null);
-            }
+        boolean deleted = taskService.deleteTask(taskId);
+        if (deleted) {
+            return ResponseEntity.ok("Task deleted successfully.");
+        } else {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("Task already deleted or does not exist.");
         }
-
-        TaskDTO updatedTask = taskService.updateTask(taskDTO);
-        return ResponseEntity.ok(updatedTask);
     }
 }

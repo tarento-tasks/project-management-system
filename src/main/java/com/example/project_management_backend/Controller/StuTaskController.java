@@ -17,7 +17,7 @@ public class StuTaskController {
 
     private final StuTaskService stuTaskService;
 
-    @PostMapping("/student/{studentId}/task/{taskId}")
+    @PostMapping("/students/{studentId}/tasks/{taskId}")
     public ResponseEntity<StuTaskDTO> assignTaskToStudent(
             @PathVariable UUID studentId, 
             @PathVariable UUID taskId) {

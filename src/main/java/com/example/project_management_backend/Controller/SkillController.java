@@ -17,25 +17,31 @@ public class SkillController {
     @Autowired
     private SkillService skillService;
 
+    /**
+     * Get all skills or a specific skill by ID
+     */
     @GetMapping
     public ResponseEntity<?> getSkills(@RequestParam Optional<UUID> id) {
-    if (id.isPresent()) {
-        SkillDTO skill = skillService.getSkillById(id.get());
-        return (skill != null) ? ResponseEntity.ok(skill) : ResponseEntity.notFound().build();
+        if (id.isPresent()) {
+            SkillDTO skill = skillService.getSkillById(id.get());
+            return ResponseEntity.ok(skill);
+        }
+        List<SkillDTO> skills = skillService.getAllSkills();
+        return ResponseEntity.ok(skills);
     }
-    List<SkillDTO> skills = skillService.getAllSkills();
-    return ResponseEntity.ok(skills);
-}
 
-
+    /**
+     * Create or update a skill
+     */
     @PostMapping
-    public ResponseEntity<?> createOrUpdateSkill(@RequestBody SkillDTO skillDTO, 
-                                                 @RequestParam(required = false) UUID id) {
-        SkillDTO skill = skillService.createOrUpdateSkill(id, skillDTO);
-        return skill != null ? ResponseEntity.ok(skill) : ResponseEntity.badRequest().body("Skill already exists");
+    public ResponseEntity<SkillDTO> createOrUpdateSkill(@RequestBody SkillDTO skillDTO,
+                                                        @RequestParam(required = false) UUID id) {
+        return ResponseEntity.ok(skillService.createOrUpdateSkill(id, skillDTO));
     }
 
-    
+    /**
+     * Delete a skill
+     */
     @DeleteMapping("/{id}")
     public ResponseEntity<String> deleteSkill(@PathVariable UUID id) {
         skillService.deleteSkill(id);

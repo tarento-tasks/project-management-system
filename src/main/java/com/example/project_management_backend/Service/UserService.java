@@ -4,6 +4,8 @@ import com.example.project_management_backend.DTO.UserDTO;
 import com.example.project_management_backend.Model.Role;
 import com.example.project_management_backend.Model.User;
 import com.example.project_management_backend.Repository.UserRepository;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 
 import jakarta.transaction.Transactional;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
@@ -29,6 +31,19 @@ public class UserService {
     public UserService(UserRepository userRepository, RoleService roleService) {
         this.userRepository = userRepository;
         this.roleService = roleService;
+
+    
+    }
+
+
+    public User getCurrentUser() {
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        
+        if (authentication != null && authentication.isAuthenticated()) {
+            // Assuming your user details are stored in a custom class (e.g., UserDetailsImpl)
+            return (User) authentication.getPrincipal(); // This will return the currently logged-in user.
+        }
+        return null; // If no authenticated user, return null.
     }
 
     

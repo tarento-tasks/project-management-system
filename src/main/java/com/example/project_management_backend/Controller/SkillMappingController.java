@@ -31,7 +31,7 @@ public class SkillMappingController {
         return ResponseEntity.ok(skillMappingService.getSkillMappings(userId, skillId));
     }
 
-    @PostMapping("/user/{userId}/skill/{skillId}")
+    @PostMapping("/users/{userId}/skills/{skillId}")
 public ResponseEntity<SkillMappingRequest> addSkillToUser(
         @PathVariable UUID userId, 
         @PathVariable UUID skillId) {
