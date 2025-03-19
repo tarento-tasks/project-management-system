@@ -2,6 +2,8 @@ package com.example.project_management_backend.Controller;
 import com.example.project_management_backend.DTO.StuTaskDTO;
 import com.example.project_management_backend.Service.StuTaskService;
 import lombok.RequiredArgsConstructor;
+
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -15,10 +17,15 @@ public class StuTaskController {
 
     private final StuTaskService stuTaskService;
 
-    @PostMapping
-    public ResponseEntity<StuTaskDTO> assignTaskToStudent(@RequestBody StuTaskDTO dto) {
-        return ResponseEntity.ok(stuTaskService.addStuTask(dto));
+    @PostMapping("/student/{studentId}/task/{taskId}")
+    public ResponseEntity<StuTaskDTO> assignTaskToStudent(
+            @PathVariable UUID studentId, 
+            @PathVariable UUID taskId) {
+        
+        StuTaskDTO assignedTask = stuTaskService.assignTaskToStudent(studentId, taskId);
+        return ResponseEntity.status(HttpStatus.CREATED).body(assignedTask);
     }
+
 
     @GetMapping("/{taskId}")
     public ResponseEntity<List<StuTaskDTO>> getStudentsByTaskId(@PathVariable UUID taskId) {
