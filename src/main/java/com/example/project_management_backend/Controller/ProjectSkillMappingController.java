@@ -1,5 +1,5 @@
 package com.example.project_management_backend.Controller;
-
+import com.example.project_management_backend.Model.User;
 import com.example.project_management_backend.DTO.ApiResponse;
 import com.example.project_management_backend.DTO.ProjectDTO;
 import com.example.project_management_backend.DTO.ProjectSkillMappingDTO;
@@ -37,9 +37,15 @@ public class ProjectSkillMappingController {
         return ResponseEntity.ok(projectSkillMappingService.getProjectSkillMappings(studentId, projectId, skillId));
     }
 
-    @GetMapping("/recommendations/{studentId}")
+    @GetMapping("/recommendations/projects/{studentId}")
     @PreAuthorize("hasRole('STUDENT')")
     public ResponseEntity<ApiResponse<List<ProjectDTO>>> getRecommendedProjects(@PathVariable UUID studentId) {
         return ResponseEntity.ok(projectSkillMappingService.getRecommendedProjectsForStudent(studentId));
+    }
+
+    @GetMapping("/recommendations/students/{projectId}")
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<ApiResponse<List<User>>> getRecommendedStudentsForProject(@PathVariable UUID projectId) {
+        return ResponseEntity.ok(projectSkillMappingService.getRecommendedStudentsForProject(projectId));
     }
 }

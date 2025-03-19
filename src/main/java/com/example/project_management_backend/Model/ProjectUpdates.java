@@ -17,16 +17,16 @@ public class ProjectUpdates {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long updateId;
 
-    private UUID userId; // Foreign key (Ensure user exists)
+    private UUID userId; 
 
     @ManyToOne
-    @JoinColumn(name = "project_id", nullable = false) // Maps to Project's ID column
-    private Project projectId; // ✅ Renamed from 'project' to 'projectId'
+    @JoinColumn(name = "project_id", nullable = false) 
+    private Project projectId; 
 
     private String updateText;
 
     @Lob
-    private byte[] updateImage; // ✅ Store PDF/Image as byte array
+    private byte[] updateImage; 
 
     private LocalDateTime createdAt;
 }

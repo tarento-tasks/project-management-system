@@ -12,7 +12,7 @@ public class ProjectUpdatesDTO {
 
     private Long updateId;
     private UUID userId;
-    private UUID projectId; // ✅ Use UUID instead of Project object
+    private UUID projectId; 
     private String updateText;
     private LocalDateTime createdAt;
 }

@@ -12,6 +12,7 @@ import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
@@ -46,8 +47,10 @@ public class ProjectEnrollmentService {
             throw new RuntimeException("Cannot enroll in a deleted project.");
         }
 
-       
-         // Check if the student is already enrolled in the project
+        if (project.getLastDate() != null && project.getLastDate().isBefore(LocalDate.now())) {
+        throw new IllegalStateException("The last date to enroll in this project has passed.");
+    }
+         
          boolean isAlreadyEnrolled = enrollmentRepository.existsByStudent_UserIdAndProject_ProjectIdAndDeletedAtIsNull(
             student.getUserId(), project.getProjectId());
 

@@ -19,8 +19,8 @@ public class Feedback {
     @JoinColumn(name = "task_id", nullable = false)
     private Task task;  // Foreign key reference to Task
 
-    @Column(nullable = false)
-    private UUID mentorId;  // Mentor's User ID
+   // @Column(nullable = false)
+    //private UUID mentorId;  // Mentor's User ID
 
     @Column(nullable = false, updatable = false)
     private LocalDateTime createdAt;
@@ -55,13 +55,13 @@ public class Feedback {
         this.task = task;
     }
 
-    public UUID getMentorId() {
+    /*public UUID getMentorId() {
         return mentorId;
     }
 
     public void setMentorId(UUID mentorId) {
         this.mentorId = mentorId;
-    }
+    }*/
 
     public LocalDateTime getCreatedAt() {
         return createdAt;

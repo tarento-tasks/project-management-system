@@ -31,6 +31,7 @@ public class SecurityConfig {
                 .authorizeHttpRequests(auth -> auth
                      
                         .requestMatchers("/api/auth/**").permitAll() 
+                        .requestMatchers(HttpMethod.POST, "/api/auth/logout").authenticated()
                         .requestMatchers("/api/roles/**").hasRole("ADMIN")
                         .requestMatchers("/api/users/**").hasAnyRole("ADMIN","MENTOR","STUDENT")
                         .requestMatchers("/api/projects/**").hasAnyRole("ADMIN", "MENTOR","STUDENT") 
@@ -47,7 +48,7 @@ public class SecurityConfig {
                         .requestMatchers("/api/tasks/*/feedback").hasAnyRole("ADMIN","MENTOR","STUDENT")
                         
                         
-                        .requestMatchers(HttpMethod.GET, "/api/project-skills/recommendations/**").hasRole("STUDENT") // Fixed path issue
+                        .requestMatchers(HttpMethod.GET, "/api/project-skills/recommendations/**").hasAnyRole("STUDENT", "MENTOR", "ADMIN") // Fixed path issue
                         .requestMatchers(HttpMethod.POST, "/api/project-skills").hasRole("ADMIN")
                         .requestMatchers(HttpMethod.GET, "/api/project-skills").hasAnyRole("STUDENT", "MENTOR", "ADMIN")
                 

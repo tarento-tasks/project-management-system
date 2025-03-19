@@ -1,6 +1,9 @@
 package com.example.project_management_backend.Service;
 
 import com.example.project_management_backend.DTO.ProjectUpdatesDTO;
+
+import com.example.project_management_backend.Exception.BadRequestException;
+import com.example.project_management_backend.Exception.ResourceNotFoundException;
 import com.example.project_management_backend.Model.Project;
 import com.example.project_management_backend.Model.ProjectUpdates;
 import com.example.project_management_backend.Repository.ProjectRepository;
@@ -15,6 +18,8 @@ import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 import java.util.stream.Collectors;
+
+
 
 @Service
 public class ProjectUpdatesService {
@@ -31,21 +36,41 @@ public class ProjectUpdatesService {
         return updates.stream().map(this::convertToDTO).collect(Collectors.toList());
     }
 
-    
+
     @Transactional
     public List<ProjectUpdatesDTO> getProjectUpdatesByProjectId(UUID projectId) {
+
+        if (!projectRepository.existsById(projectId)) {
+            throw new ResourceNotFoundException("Project not found with ID: " + projectId);
+        }
+
         List<ProjectUpdates> updates = projectUpdatesRepository.findByProjectId_ProjectId(projectId);
+
+        if (updates.isEmpty()) {
+            throw new ResourceNotFoundException("No project updates found for project ID: " + projectId);
+        }
+
         return updates.stream().map(this::convertToDTO).collect(Collectors.toList());
     }
 
-  
-    public ProjectUpdatesDTO createProjectUpdate(UUID userId, UUID projectId, String updateText, MultipartFile updateImage) throws IOException {
+
+    public ProjectUpdatesDTO createProjectUpdate( UUID userId,UUID projectId, String updateText, MultipartFile updateImage) throws IOException {
         Optional<Project> projectOptional = projectRepository.findById(projectId);
-        
-        
+
+
+
         if (projectOptional.isEmpty() || projectOptional.get().getDeletedAt() != null) {
-            throw new RuntimeException("Project not found or deleted!");
+            throw new ResourceNotFoundException("Project not found or has been deleted!");
         }
+
+
+
+   
+        if (updateText == null || updateText.trim().isEmpty()) {
+            throw new BadRequestException("Update text cannot be empty.");
+        }
+
+
 
         ProjectUpdates updates = new ProjectUpdates();
         updates.setUserId(userId);
@@ -62,6 +87,7 @@ public class ProjectUpdatesService {
         return convertToDTO(savedUpdates);
     }
 
+   
     private ProjectUpdatesDTO convertToDTO(ProjectUpdates updates) {
         return new ProjectUpdatesDTO(
                 updates.getUpdateId(),

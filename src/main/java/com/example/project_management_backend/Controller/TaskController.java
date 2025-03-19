@@ -23,13 +23,12 @@ public class TaskController {
 
     private final TaskService taskService;
 
-    // Manually inject TaskService using constructor
     @Autowired
     public TaskController(TaskService taskService) {
         this.taskService = taskService;
     }
 
-    // Create a new task (only ADMIN or assigned mentor)
+    
     @PostMapping
     @PreAuthorize("hasRole('ADMIN') or @taskService.isAssignedMentor(#taskDTO.projectId)")
     public ResponseEntity<ApiResponse<TaskDTO>> createTask(@RequestBody TaskDTO taskDTO) {
@@ -38,14 +37,14 @@ public class TaskController {
         return ResponseEntity.ok(response);
     }
 
-    // Update a task (ADMIN, assigned mentor, or assigned student)
+   
     @PutMapping("/{taskId}")
     @PreAuthorize("hasRole('ADMIN') or @taskService.isAssignedMentor(#taskId) or @taskService.isAssignedStudent(#taskId)")
     public ResponseEntity<ApiResponse<TaskDTO>> updateTask(
             @PathVariable UUID taskId,
             @RequestParam(value = "taskName", required = false) String taskName,
             @RequestParam(value = "taskObjective", required = false) String taskObjective,
-            @RequestParam(value = "dueDate", required = false) String dueDateStr, // Accept dueDate as String
+            @RequestParam(value = "dueDate", required = false) String dueDateStr, 
             @RequestParam(value = "completeStatus", required = false) String completeStatus,
             @RequestParam(value = "studentStatus", required = false) String studentStatus,
             @RequestParam(value = "attachments", required = false) MultipartFile attachments) {
@@ -54,7 +53,7 @@ public class TaskController {
         taskDTO.setTaskName(taskName);
         taskDTO.setTaskObjective(taskObjective);
 
-        // Convert dueDate from String to LocalDateTime
+        
         if (dueDateStr != null) {
             try {
                 LocalDateTime dueDate = LocalDateTime.parse(dueDateStr, DateTimeFormatter.ISO_LOCAL_DATE_TIME);
@@ -67,11 +66,11 @@ public class TaskController {
         taskDTO.setCompleteStatus(completeStatus);
         taskDTO.setStudentStatus(studentStatus);
 
-        // Handle file upload
+        
         if (attachments != null) {
             try {
                 taskDTO.setAttachments(attachments.getBytes());
-            } catch (IOException e) { // Correct exception
+            } catch (IOException e) { 
                 throw new RuntimeException("Failed to process file upload", e);
             }
         }
@@ -81,7 +80,7 @@ public class TaskController {
         return ResponseEntity.ok(response);
     }
 
-    // Get all tasks for a project (ADMIN, assigned mentor, or assigned student)
+    
     @GetMapping("/project/{projectId}")
     @PreAuthorize("hasRole('ADMIN') or @taskService.isAssignedMentor(#projectId) or @taskService.isAssignedStudent(#projectId)")
     public ResponseEntity<ApiResponse<List<TaskDTO>>> getTasksByProjectId(@PathVariable UUID projectId) {
@@ -90,7 +89,7 @@ public class TaskController {
         return ResponseEntity.ok(response);
     }
 
-    // Delete a task (only ADMIN or assigned mentor)
+   
     @DeleteMapping("/{taskId}")
     @PreAuthorize("hasRole('ADMIN') or @taskService.isAssignedMentor(#taskId)")
     public ResponseEntity<ApiResponse<Void>> deleteTask(@PathVariable UUID taskId) {

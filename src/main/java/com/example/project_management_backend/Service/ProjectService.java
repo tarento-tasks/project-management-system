@@ -8,6 +8,8 @@ import com.example.project_management_backend.Repository.UserRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import jakarta.transaction.Transactional;
+
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
@@ -68,8 +70,18 @@ public class ProjectService {
         User mentor = userRepository.findById(projectDTO.getMentorId())
                 .orElseThrow(() -> new IllegalArgumentException("Mentor not found"));
 
-        
-                if (!projectDTO.getLastDate().isBefore(projectDTO.getDueDate())) {    throw new IllegalArgumentException("Last date must be before due date");}
+                LocalDateTime currentDateTime = LocalDateTime.now();
+                LocalDate currentDate = currentDateTime.toLocalDate(); 
+
+
+          if (projectDTO.getLastDate().isBefore(currentDate)) {
+           throw new IllegalArgumentException("Last date cannot be before the current date.");
+          }
+
+           if (projectDTO.getDueDate().isBefore(currentDate)) {
+           throw new IllegalArgumentException("Due date cannot be before the current date.");
+           }
+          if (!projectDTO.getLastDate().isBefore(projectDTO.getDueDate())) {    throw new IllegalArgumentException("Last date must be before due date");}
         
                 
 

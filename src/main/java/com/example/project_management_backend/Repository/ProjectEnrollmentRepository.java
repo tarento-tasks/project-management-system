@@ -18,6 +18,7 @@ public interface ProjectEnrollmentRepository extends JpaRepository<ProjectEnroll
 
     Optional<ProjectEnrollment> findByStudent_UserIdAndProject_ProjectIdAndDeletedAtIsNull(UUID studentId, UUID projectId);
 
-  
+    List<ProjectEnrollment> findByProject_ProjectIdAndStatus(UUID projectId, String status);
+
     boolean existsByStudent_UserIdAndProject_ProjectIdAndDeletedAtIsNull(UUID studentId, UUID projectId);
 }

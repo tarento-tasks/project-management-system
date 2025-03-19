@@ -1,12 +1,10 @@
 package com.example.project_management_backend.Controller;
 
-import com.example.project_management_backend.DTO.ApiResponse;
 import com.example.project_management_backend.DTO.FeedbackDTO;
 import com.example.project_management_backend.Service.FeedbackService;
-import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.security.access.prepost.PreAuthorize;
 
 import java.util.List;
 import java.util.UUID;
@@ -21,24 +19,20 @@ public class FeedbackController {
         this.feedbackService = feedbackService;
     }
 
+    // Mentor: Post Feedback
     @PostMapping
-    @PreAuthorize("hasAnyRole('MENTOR', 'ADMIN')")
-    public ResponseEntity<ApiResponse<FeedbackDTO>> addFeedback(
-        @PathVariable UUID taskId,
-        @RequestBody FeedbackDTO feedbackDTO
-    ) {
-        FeedbackDTO createdFeedback = feedbackService.addFeedback(taskId, feedbackDTO.getMentorId(), feedbackDTO.getFeedback());
-        return ResponseEntity.ok(
-            new ApiResponse<>(HttpStatus.OK.value(), "Feedback added successfully", createdFeedback)
-        );
+    @PreAuthorize("hasRole('MENTOR', 'ADMIN')")
+
+    public ResponseEntity<FeedbackDTO> addFeedback(@PathVariable UUID taskId,
+                                                   @RequestBody FeedbackDTO feedbackDTO) {
+        FeedbackDTO createdFeedback = feedbackService.addFeedback(taskId, feedbackDTO.getFeedback());
+        return ResponseEntity.ok(createdFeedback);
     }
 
+    // Student: Get Feedback by Task ID
     @GetMapping
-    @PreAuthorize("hasAnyRole('MENTOR', 'ADMIN','STUDENT')")
-    public ResponseEntity<ApiResponse<List<FeedbackDTO>>> getFeedback(@PathVariable UUID taskId) {
+    public ResponseEntity<List<FeedbackDTO>> getFeedback(@PathVariable UUID taskId) {
         List<FeedbackDTO> feedbackList = feedbackService.getFeedbackByTaskId(taskId);
-        return ResponseEntity.ok(
-            new ApiResponse<>(HttpStatus.OK.value(), "Feedback fetched successfully", feedbackList)
-        );
+        return ResponseEntity.ok(feedbackList);
     }
 }

@@ -15,6 +15,7 @@ import java.util.Date;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
+import java.util.UUID;
 
 @Component
 public class JwtUtil {
@@ -37,6 +38,7 @@ public class JwtUtil {
     public String generateToken(User user) {
         return Jwts.builder()
                 .setSubject(user.getEmail())
+                .claim("user_id", user.getUserId().toString()) // Store user_id properly
                 .claim("authorities", List.of("ROLE_" + user.getRole().getRoleName()))
                 .setIssuedAt(new Date())
                 .setExpiration(new Date(System.currentTimeMillis() + EXPIRATION_TIME))
@@ -52,6 +54,18 @@ public class JwtUtil {
                 .parseClaimsJws(token)
                 .getBody()
                 .getSubject();
+    }
+
+
+    public UUID extractUserId(String token) {
+        Claims claims = extractAllClaims(token);
+        String userIdStr = claims.get("user_id", String.class); // Corrected from "sub" to "user_id"
+
+        if (userIdStr == null || userIdStr.trim().isEmpty()) {
+            throw new IllegalArgumentException("User ID is missing from token");
+        }
+
+        return UUID.fromString(userIdStr);
     }
 
  

@@ -17,8 +17,10 @@ public class Comment {
 
     @ManyToOne
     @JoinColumn(name = "task_id", nullable = false)
-    private Task task;  
-   
+    private Task task;  // Foreign key reference to Task
+
+    /*@Column(nullable = false)
+    private UUID userId; */ // Student ID
 
     @Column(nullable = false, updatable = false)
     private LocalDateTime createdAt;
@@ -28,7 +30,7 @@ public class Comment {
         this.createdAt = LocalDateTime.now();
     }
 
-  
+    // Getters and Setters
     public UUID getCommentId() {
         return commentId;
     }
@@ -53,7 +55,13 @@ public class Comment {
         this.task = task;
     }
 
- 
+   /* public UUID getUserId() {
+        return userId;
+    }
+
+    public void setUserId(UUID userId) {
+        this.userId = userId;
+    }*/
 
     public LocalDateTime getCreatedAt() {
         return createdAt;

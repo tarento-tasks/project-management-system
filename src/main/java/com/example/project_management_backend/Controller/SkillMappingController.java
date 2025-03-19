@@ -33,15 +33,31 @@ public class SkillMappingController {
         return ResponseEntity.ok(response);
     }
 
-    @PostMapping
-    @PreAuthorize("hasRole('ADMIN')")
-    public ResponseEntity<ApiResponse<SkillMappingRequest>> addOrUpdateSkillToUser(@RequestBody SkillMappingRequest request) {
-        SkillMapping skillMapping = skillMappingService.addOrUpdateSkillToUser(request.getUserId(), request.getSkillId());
-        SkillMappingRequest responseData = new SkillMappingRequest(skillMapping.getUser().getUserId(), skillMapping.getSkill().getSkillId());
-        ApiResponse<SkillMappingRequest> response = new ApiResponse<>(200, "Skill mapping processed successfully", responseData);
-        return ResponseEntity.ok(response);
-    }
+    @PostMapping("/users/{userId}/skills/{skillId}")
+@PreAuthorize("hasRole('ADMIN')")
+public ResponseEntity<ApiResponse<SkillMappingRequest>> addSkillToUser(
+        @PathVariable UUID userId, 
+        @PathVariable UUID skillId) {
 
+    
+    SkillMapping skillMapping = skillMappingService.addOrUpdateSkillToUser(userId, skillId);
+
+  
+    SkillMappingRequest responseData = new SkillMappingRequest(
+            skillMapping.getUser().getUserId(), 
+            skillMapping.getSkill().getSkillId()
+    );
+
+    
+    ApiResponse<SkillMappingRequest> response = new ApiResponse<>(
+            200, 
+            "Skill mapping processed successfully", 
+            responseData
+    );
+
+   
+    return ResponseEntity.ok(response);
+}
 
     @DeleteMapping("/{userId}/{skillId}")
 @PreAuthorize("hasAnyRole('ADMIN', 'MENTOR', 'STUDENT')")
