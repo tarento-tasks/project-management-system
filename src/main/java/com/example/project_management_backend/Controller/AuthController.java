@@ -1,5 +1,5 @@
 package com.example.project_management_backend.Controller;
-
+import org.springframework.web.bind.annotation.CrossOrigin;
 import com.example.project_management_backend.DTO.ApiResponse;
 import com.example.project_management_backend.DTO.LoginRequest;
 import com.example.project_management_backend.DTO.LoginResponse;
@@ -8,6 +8,23 @@ import com.example.project_management_backend.config.JwtUtil;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+
+import org.springframework.web.bind.annotation.CrossOrigin;
+import com.example.project_management_backend.Model.User;
+import com.example.project_management_backend.Repository.UserRepository;
+import com.example.project_management_backend.Service.AuthService;
+import com.example.project_management_backend.config.JwtUtil;
+import com.example.project_management_backend.DTO.LoginRequest;
+import com.example.project_management_backend.DTO.LoginResponse;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.ResponseEntity;
+import org.springframework.security.authentication.AuthenticationManager;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.web.bind.annotation.*;
+
+@CrossOrigin(origins = "http://localhost:5173") // Allow only requests from this origin
 
 @RestController
 @RequestMapping("/api/auth")

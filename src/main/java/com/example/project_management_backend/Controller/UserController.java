@@ -60,11 +60,11 @@ public class UserController {
             @RequestParam String email,
             @RequestParam(required = false) String password,
             @RequestParam String name,
-            @RequestParam String dob,
+            @RequestParam (required = false) String dob,
             @RequestParam(required = false) MultipartFile image,
             @RequestParam(required = false) String previousWork,
             @RequestParam(required = false) String qualifications,
-            @RequestParam(required = false) UUID roleId) {
+            @RequestParam UUID roleId) {
 
         try {
             UserDTO userDTO = userService.convertToDTO(

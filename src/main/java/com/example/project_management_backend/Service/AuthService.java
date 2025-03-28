@@ -51,12 +51,14 @@ public class AuthService {
         
         String token = jwtUtil.generateToken(user);
 
-        LoginResponse loginResponse = new LoginResponse();
-        loginResponse.setToken(token);
+        String roleName = user.getRole().getRoleName(); // Assuming User has a Role entity linked
+
+    LoginResponse loginResponse = new LoginResponse();
+    loginResponse.setToken(token);
+    loginResponse.setRole(roleName);
         return loginResponse;
         
     }
-
 
 
 } 

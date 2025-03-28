@@ -48,7 +48,11 @@ public class TaskService {
             throw new RuntimeException("Only ADMIN or assigned mentor can create tasks");
         }
 
-      
+         boolean taskExists = taskRepository.existsByTaskNameAndProject_ProjectId(taskDTO.getTaskName(), taskDTO.getProjectId());
+
+        if (taskExists) {
+        throw new RuntimeException("Task with the same name already exists in this project. Choose a different name.");
+    }
         Task task = new Task();
         task.setTaskName(taskDTO.getTaskName());
         task.setTaskObjective(taskDTO.getTaskObjective());
@@ -94,7 +98,7 @@ public class TaskService {
             task.setDueDate(taskDTO.getDueDate());
             task.setCompleteStatus(taskDTO.getCompleteStatus());
         } else if (isAssignedStudent) {
-            // Check if the due date has passed
+           
         if (task.getDueDate().isBefore(LocalDateTime.now())) {
             throw new RuntimeException("The due date has passed. You can no longer update attachments or student status.");
         }
