@@ -1,8 +1,5 @@
 package com.example.project_management_backend.Service;
-
 import com.example.project_management_backend.DTO.StuTaskDTO;
-import com.example.project_management_backend.Exception.AlreadyExistsException;
-import com.example.project_management_backend.Exception.ResourceNotFoundException;
 import com.example.project_management_backend.Model.StuTask;
 import com.example.project_management_backend.Model.StuTaskId;
 import com.example.project_management_backend.Model.Task;
@@ -10,10 +7,13 @@ import com.example.project_management_backend.Model.User;
 import com.example.project_management_backend.Repository.StuTaskRepository;
 import com.example.project_management_backend.Repository.TaskRepository;
 import com.example.project_management_backend.Repository.UserRepository;
-
+import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
-import jakarta.transaction.Transactional;
+import org.springframework.web.server.ResponseStatusException;
+
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.UUID;
 import java.util.stream.Collectors;
@@ -26,53 +26,55 @@ public class StuTaskService {
     private final UserRepository userRepository;
     private final TaskRepository taskRepository;
 
-    @Transactional
-    public StuTaskDTO assignTaskToStudent(UUID studentId, UUID taskId) {
-        // Validate student exists and is not soft deleted
-        User student = userRepository.findById(studentId)
-                .filter(s -> s.getDeletedAt() == null)
-                .orElseThrow(() -> new ResourceNotFoundException("Student not found or has been deleted"));
+    // Add or update task assignment
+    public StuTaskDTO addOrUpdateStuTask(StuTaskDTO dto) {
+        User student = userRepository.findById(dto.getStudentId())
+                .orElseThrow(() -> new EntityNotFoundException("Student not found"));
 
-        // Validate task exists and is not soft deleted
-        Task task = taskRepository.findByTaskIdAndDeletedAtIsNull(taskId)
-                .orElseThrow(() -> new ResourceNotFoundException("Task not found or has been deleted"));
+        Task task = taskRepository.findById(dto.getTaskId())
+                .orElseThrow(() -> new EntityNotFoundException("Task not found"));
 
-        // Check if assignment already exists
-        StuTaskId stuTaskId = new StuTaskId(studentId, taskId);
-        if (stuTaskRepository.existsById(stuTaskId)) {
-            throw new AlreadyExistsException("Student is already assigned to this task");
+        StuTaskId stuTaskId = new StuTaskId(dto.getStudentId(), dto.getTaskId());
+        StuTask stuTask = stuTaskRepository.findById(stuTaskId).orElse(null);
+
+        if (stuTask != null) {
+            // Update existing record
+            if (stuTask.getDeletedAt() != null) {
+                stuTask.setDeletedAt(null);  // Restore if it was soft deleted
+            }
+        } else {
+            // Create new record
+            stuTask = StuTask.builder()
+                    .id(stuTaskId)
+                    .student(student)
+                    .task(task)
+                    .build();
         }
 
-        // Create and save assignment
-        StuTask stuTask = new StuTask(stuTaskId, student, task);
         stuTaskRepository.save(stuTask);
-
-        return new StuTaskDTO(studentId, taskId);
+        return dto;
     }
 
+    // Get all students assigned to a task
     public List<StuTaskDTO> getStudentsByTaskId(UUID taskId) {
-        // Validate task exists and is not soft deleted
-        Task task = taskRepository.findById(taskId)
-                .filter(t -> t.getDeletedAt() == null)
-                .orElseThrow(() -> new ResourceNotFoundException("Task not found or has been deleted"));
-
         List<StuTask> stuTasks = stuTaskRepository.findByTaskTaskId(taskId);
-        return stuTasks.stream().map(stuTask -> new StuTaskDTO(
-                stuTask.getStudent().getUserId(),
-                stuTask.getTask().getTaskId()
-        )).collect(Collectors.toList());
+        return stuTasks.stream()
+                .filter(stuTask -> stuTask.getDeletedAt() == null) // Exclude soft-deleted records
+                .map(stuTask -> new StuTaskDTO(stuTask.getStudent().getUserId(), stuTask.getTask().getTaskId()))
+                .collect(Collectors.toList());
     }
 
-    public List<StuTaskDTO> getTasksByStudentId(UUID studentId) {
-        // Validate student exists and is not soft deleted
-        User student = userRepository.findById(studentId)
-                .filter(s -> s.getDeletedAt() == null)
-                .orElseThrow(() -> new ResourceNotFoundException("Student not found or has been deleted"));
+    // Soft delete a task assignment
+    public void softDeleteStuTask(UUID studentId, UUID taskId) {
+        StuTaskId id = new StuTaskId(studentId, taskId);
+        StuTask stuTask = stuTaskRepository.findById(id)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Student-task assignment not found"));
 
-        List<StuTask> stuTasks = stuTaskRepository.findByStudentUserId(studentId);
-        return stuTasks.stream().map(stuTask -> new StuTaskDTO(
-                stuTask.getStudent().getUserId(),
-                stuTask.getTask().getTaskId()
-        )).collect(Collectors.toList());
+        if (stuTask.getDeletedAt() != null) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "This task assignment is already deleted");
+        }
+
+        stuTask.setDeletedAt(LocalDateTime.now());
+        stuTaskRepository.save(stuTask);
     }
 }

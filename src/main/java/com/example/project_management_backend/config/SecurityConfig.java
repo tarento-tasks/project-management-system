@@ -2,6 +2,7 @@ package com.example.project_management_backend.config;
 
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.http.HttpMethod;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.config.annotation.authentication.configuration.AuthenticationConfiguration;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
@@ -30,20 +31,31 @@ public class SecurityConfig {
                 .authorizeHttpRequests(auth -> auth
                      
                         .requestMatchers("/api/auth/**").permitAll() 
-                   
-                        .requestMatchers("/api/roles/**").hasRole("ADMIN") 
-                  
-                        .requestMatchers("/api/users/**").permitAll()
-
-                        .requestMatchers("/api/skill-mapping/**").permitAll()
+                        .requestMatchers(HttpMethod.POST, "/api/auth/logout").authenticated()
+                        .requestMatchers("/api/roles/**").hasRole("ADMIN")
+                        .requestMatchers("/api/users/**").hasAnyRole("ADMIN","MENTOR","STUDENT")
+                        .requestMatchers("/api/projects/**").hasAnyRole("ADMIN", "MENTOR","STUDENT") 
+                        .requestMatchers("/api/tasks/**").hasAnyRole("ADMIN", "MENTOR", "STUDENT")
+                        .requestMatchers("/api/skills/**").hasAnyRole("ADMIN","MENTOR","STUDENT")
+                        .requestMatchers("/api/skill-mapping/**").hasAnyRole("ADMIN","MENTOR","STUDENT") 
                         
-                        .requestMatchers("/api/projects/**").hasAnyRole("ADMIN", "MENTOR") 
-                        .requestMatchers("/api/tasks/**").hasAnyRole("ADMIN", "MENTOR") 
-                        .requestMatchers("/api/stu-task/**").permitAll()
-                        .requestMatchers("/api/skills/**").hasRole("ADMIN") 
+                        .requestMatchers(HttpMethod.POST, "/api/project-enrollment").hasAnyRole("STUDENT", "ADMIN")  
+                        .requestMatchers(HttpMethod.GET, "/api/project-enrollment").hasAnyRole("ADMIN", "STUDENT")  
+                        .requestMatchers(HttpMethod.DELETE, "/api/project-enrollment/**").hasAnyRole("STUDENT", "ADMIN")  
+
+                        .requestMatchers("/api/stu-task/**").hasAnyRole("ADMIN","MENTOR","STUDENT") 
+                        .requestMatchers("/api/tasks/*/comments").hasAnyRole("ADMIN","MENTOR","STUDENT")
+                        .requestMatchers("/api/tasks/*/feedback").hasAnyRole("ADMIN","MENTOR","STUDENT")
+                        
+                        
+                        .requestMatchers(HttpMethod.GET, "/api/project-skills/recommendations/**").hasAnyRole("STUDENT", "MENTOR", "ADMIN") // Fixed path issue
+                        .requestMatchers(HttpMethod.POST, "/api/project-skills").hasRole("ADMIN")
+                        .requestMatchers(HttpMethod.GET, "/api/project-skills").hasAnyRole("STUDENT", "MENTOR", "ADMIN")
+                
                         .anyRequest().authenticated()
                 )
                 .addFilterBefore(new JWTFilter(jwtUtil), UsernamePasswordAuthenticationFilter.class); 
+        
         return http.build();
     }
 

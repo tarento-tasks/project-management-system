@@ -2,94 +2,101 @@ package com.example.project_management_backend.Controller;
 
 import com.example.project_management_backend.DTO.TaskDTO;
 import com.example.project_management_backend.Service.TaskService;
-import com.example.project_management_backend.Exception.ResourceNotFoundException;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
-import org.springframework.http.HttpStatus;
 
-import java.io.IOException;
+import java.io.IOException; // Correct import
 import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
+import java.time.format.DateTimeParseException;
 import java.util.List;
 import java.util.UUID;
+import org.springframework.web.bind.annotation.CrossOrigin;
+import com.example.project_management_backend.DTO.ApiResponse;
 
 @RestController
+@CrossOrigin(origins = "http://localhost:5173")
 @RequestMapping("/api/tasks")
 public class TaskController {
 
     private final TaskService taskService;
 
+    @Autowired
     public TaskController(TaskService taskService) {
         this.taskService = taskService;
     }
 
-    // ✅ **Create or update a task**
-    @PostMapping("/save")
-    public ResponseEntity<TaskDTO> createOrUpdateTask(@RequestBody TaskDTO taskDTO) {
-        try {
-            TaskDTO savedTask = taskService.createOrUpdateTask(taskDTO);
-            return ResponseEntity.status(HttpStatus.CREATED).body(savedTask);
-        } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(null);
-        }
-    }
-
-    // ✅ **Unified GET API for all task queries**
-    @GetMapping
-    public ResponseEntity<?> getTasks(
-            @RequestParam(required = false) UUID taskId,
-            @RequestParam(required = false) UUID projectId) {
-        try {
-            if (taskId != null) {
-                // Fetch a single task by ID
-                return ResponseEntity.ok(taskService.getTaskById(taskId));
-            } else if (projectId != null) {
-                // Fetch tasks by project ID
-                return ResponseEntity.ok(taskService.getTasksByProject(projectId));
-            } else {
-                // Fetch all tasks
-                return ResponseEntity.ok(taskService.getAllTasks());
-            }
-        } catch (ResourceNotFoundException e) {
-            return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Resource not found");
-        }
-    }
-
-    @PutMapping("/update/{taskId}")
-public ResponseEntity<TaskDTO> updateStudentTask(
-        @PathVariable UUID taskId,
-        @RequestParam(required = false) String studentStatus,
-        @RequestParam(required = false) String taskName,
-        @RequestParam(required = false) LocalDateTime dueDate,
-        @RequestParam(required = false) String completeStatus,
-        @RequestParam(required = false) String openStatus,
-        @RequestParam(required = false) String taskObjective,
-        @RequestParam(required = false) MultipartFile attachments) throws IOException{
     
-        byte[] attachmentBytes = null;
+    @PostMapping
+    @PreAuthorize("hasRole('ADMIN') or @taskService.isAssignedMentor(#taskDTO.projectId)")
+    public ResponseEntity<ApiResponse<TaskDTO>> createTask(@RequestBody TaskDTO taskDTO) {
+        TaskDTO createdTask = taskService.createTask(taskDTO);
+        ApiResponse<TaskDTO> response = new ApiResponse<>(200, "Task created successfully", createdTask);
+        return ResponseEntity.ok(response);
+    }
+
+   
+    @PutMapping("/{taskId}")
+    @PreAuthorize("hasRole('ADMIN') or @taskService.isAssignedMentor(#taskId) or @taskService.isAssignedStudent(#taskId)")
+    public ResponseEntity<ApiResponse<TaskDTO>> updateTask(
+            @PathVariable UUID taskId,
+            @RequestParam(value = "taskName", required = false) String taskName,
+            @RequestParam(value = "taskObjective", required = false) String taskObjective,
+            @RequestParam(value = "dueDate", required = false) String dueDateStr, 
+            @RequestParam(value = "completeStatus", required = false) String completeStatus,
+            @RequestParam(value = "studentStatus", required = false) String studentStatus,
+            @RequestParam(value = "attachments", required = false) MultipartFile attachments) {
+
+        TaskDTO taskDTO = new TaskDTO();
+        taskDTO.setTaskName(taskName);
+        taskDTO.setTaskObjective(taskObjective);
+
         
-        // Convert MultipartFile to byte[] if a file is provided
-        if (attachments != null && !attachments.isEmpty()) {
-            attachmentBytes = attachments.getBytes();
+        if (dueDateStr != null) {
+            try {
+                LocalDateTime dueDate = LocalDateTime.parse(dueDateStr, DateTimeFormatter.ISO_LOCAL_DATE_TIME);
+                taskDTO.setDueDate(dueDate);
+            } catch (DateTimeParseException e) {
+                throw new RuntimeException("Invalid date format. Expected format: yyyy-MM-dd'T'HH:mm:ss", e);
+            }
         }
 
-        // Call service method to update task
-        TaskDTO updatedTask = taskService.updateTask(taskId, studentStatus, taskName, dueDate, completeStatus, openStatus, taskObjective, attachmentBytes);
+        taskDTO.setCompleteStatus(completeStatus);
+        taskDTO.setStudentStatus(studentStatus);
 
-        // Return the updated task
-        return ResponseEntity.ok(updatedTask);
+        
+        if (attachments != null) {
+            try {
+                taskDTO.setAttachments(attachments.getBytes());
+            } catch (IOException e) { 
+                throw new RuntimeException("Failed to process file upload", e);
+            }
+        }
 
-}
+        TaskDTO updatedTask = taskService.updateTask(taskId, taskDTO);
+        ApiResponse<TaskDTO> response = new ApiResponse<>(200, "Task updated successfully", updatedTask);
+        return ResponseEntity.ok(response);
+    }
 
+    
+    @GetMapping("/project/{projectId}")
+    @PreAuthorize("hasRole('ADMIN') or @taskService.isAssignedMentor(#projectId) or @taskService.isAssignedStudent(#projectId)")
+    public ResponseEntity<ApiResponse<List<TaskDTO>>> getTasksByProjectId(@PathVariable UUID projectId) {
+        List<TaskDTO> tasks = taskService.getTasksByProjectId(projectId);
+        ApiResponse<List<TaskDTO>> response = new ApiResponse<>(200, "Tasks retrieved successfully", tasks);
+        return ResponseEntity.ok(response);
+    }
 
-    // ✅ **Soft delete a task**
+   
     @DeleteMapping("/{taskId}")
-    public ResponseEntity<String> deleteTask(@PathVariable UUID taskId) {
-        boolean deleted = taskService.deleteTask(taskId);
-        if (deleted) {
-            return ResponseEntity.ok("Task deleted successfully.");
-        } else {
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("Task already deleted or does not exist.");
-        }
+    @PreAuthorize("hasRole('ADMIN') or @taskService.isAssignedMentor(#taskId)")
+    public ResponseEntity<ApiResponse<Void>> deleteTask(@PathVariable UUID taskId) {
+        taskService.deleteTask(taskId);
+        ApiResponse<Void> response = new ApiResponse<>(200, "Task deleted successfully", null);
+        return ResponseEntity.ok(response);
     }
 }
+    

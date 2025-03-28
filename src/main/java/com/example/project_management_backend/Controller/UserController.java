@@ -3,7 +3,7 @@ package com.example.project_management_backend.Controller;
 import com.example.project_management_backend.DTO.UserDTO;
 import com.example.project_management_backend.Model.User;
 import com.example.project_management_backend.Service.UserService;
-
+import org.springframework.web.bind.annotation.CrossOrigin;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
@@ -13,6 +13,7 @@ import java.util.Optional;
 import java.util.UUID;
 
 @RestController
+@CrossOrigin(origins = "http://localhost:5173")
 @RequestMapping("/api/users")
 public class UserController {
 

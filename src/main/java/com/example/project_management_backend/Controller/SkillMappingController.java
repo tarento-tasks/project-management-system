@@ -3,7 +3,7 @@ package com.example.project_management_backend.Controller;
 import com.example.project_management_backend.DTO.SkillMappingRequest;
 import com.example.project_management_backend.Model.SkillMapping;
 import com.example.project_management_backend.Service.SkillMappingService;
-
+import org.springframework.web.bind.annotation.CrossOrigin;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -13,6 +13,7 @@ import java.util.Optional;
 import java.util.UUID;
 
 @RestController
+@CrossOrigin(origins = "http://localhost:5173")
 @RequestMapping("/api/skill-mapping")
 public class SkillMappingController {
 

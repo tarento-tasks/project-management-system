@@ -2,13 +2,16 @@ package com.example.project_management_backend.Controller;
 import com.example.project_management_backend.DTO.StuTaskDTO;
 import com.example.project_management_backend.Service.StuTaskService;
 import lombok.RequiredArgsConstructor;
-
-import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 import java.util.UUID;
+
+import com.example.project_management_backend.DTO.ApiResponse;
+
+
 
 @RestController
 @RequestMapping("/api/stu-task")
@@ -17,19 +20,30 @@ public class StuTaskController {
 
     private final StuTaskService stuTaskService;
 
-    @PostMapping("/students/{studentId}/tasks/{taskId}")
-    public ResponseEntity<StuTaskDTO> assignTaskToStudent(
-            @PathVariable UUID studentId, 
-            @PathVariable UUID taskId) {
-        
-        StuTaskDTO assignedTask = stuTaskService.assignTaskToStudent(studentId, taskId);
-        return ResponseEntity.status(HttpStatus.CREATED).body(assignedTask);
+    
+    @PostMapping
+    @PreAuthorize("hasAnyRole('MENTOR', 'ADMIN')")
+    public ResponseEntity<ApiResponse<StuTaskDTO>> addOrUpdateStuTask(@RequestBody StuTaskDTO dto) {
+        StuTaskDTO updatedTask = stuTaskService.addOrUpdateStuTask(dto);
+        ApiResponse<StuTaskDTO> response = new ApiResponse<>(200, "Task assigned/updated successfully", updatedTask);
+        return ResponseEntity.ok(response);
     }
 
-
+ 
     @GetMapping("/{taskId}")
-    public ResponseEntity<List<StuTaskDTO>> getStudentsByTaskId(@PathVariable UUID taskId) {
-        return ResponseEntity.ok(stuTaskService.getStudentsByTaskId(taskId));
+    @PreAuthorize("hasAnyRole('MENTOR', 'ADMIN','STUDENT')")
+    public ResponseEntity<ApiResponse<List<StuTaskDTO>>> getStudentsByTaskId(@PathVariable UUID taskId) {
+        List<StuTaskDTO> students = stuTaskService.getStudentsByTaskId(taskId);
+        ApiResponse<List<StuTaskDTO>> response = new ApiResponse<>(200, "Students retrieved successfully", students);
+        return ResponseEntity.ok(response);
+    }
+
+ 
+    @DeleteMapping("/{studentId}/{taskId}")
+    @PreAuthorize("hasAnyRole('MENTOR', 'ADMIN')")
+    public ResponseEntity<ApiResponse<Void>> softDeleteStuTask(@PathVariable UUID studentId, @PathVariable UUID taskId) {
+        stuTaskService.softDeleteStuTask(studentId, taskId);
+        ApiResponse<Void> response = new ApiResponse<>(200, "Task assignment deleted successfully", null);
+        return ResponseEntity.ok(response);
     }
 }
-

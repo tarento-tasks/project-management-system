@@ -14,5 +14,6 @@ public interface TaskRepository extends JpaRepository<Task, UUID> {
     List<Task> findByProject_ProjectId(UUID projectId); 
     Optional<Task> findByTaskIdAndDeletedAtIsNull(UUID taskId);
     boolean existsByTaskNameAndProject_ProjectId(String taskName, UUID projectId);
+    
 
 }

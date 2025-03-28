@@ -1,4 +1,8 @@
 package com.example.project_management_backend.Model;
+
+
+import java.time.LocalDateTime;
+
 import jakarta.persistence.*;
 import lombok.*;
 
@@ -24,9 +28,5 @@ public class StuTask {
     @JoinColumn(name = "task_id", nullable = false)
     private Task task;
 
-    public StuTask(User student, Task task) {
-        this.id = new StuTaskId(student.getUserId(), task.getTaskId()); // Initializes composite key
-        this.student = student;
-        this.task = task;
-    }
+    private LocalDateTime deletedAt;
 }
