@@ -15,6 +15,7 @@ import java.util.UUID;
 
 @RestController
 @CrossOrigin(origins = "http://localhost:5173")
+
 @RequestMapping("/api/users")
 public class UserController {
 
@@ -24,29 +25,43 @@ public class UserController {
         this.userService = userService;
     }
 
-  
     @GetMapping
     @PreAuthorize("hasAnyRole('MENTOR', 'ADMIN', 'STUDENT')")
-    public ResponseEntity<ApiResponse<?>> getUsers(@RequestParam(required = false) UUID userId,
-                                                   @RequestParam(required = false) String email) {
+    public ResponseEntity<ApiResponse<?>> getUsers(
+            @RequestParam(required = false) UUID userId,
+            @RequestParam(required = false) String email,
+            @RequestParam(required = false) String role) {
+        
         if (userId != null) {
             UserDTO user = userService.getUserById(userId).orElse(null);
             if (user != null) {
                 return ResponseEntity.ok(new ApiResponse<>(HttpStatus.OK.value(), "User fetched successfully", user));
-            } else {
-                return ResponseEntity.status(HttpStatus.NOT_FOUND)
-                        .body(new ApiResponse<>(HttpStatus.NOT_FOUND.value(), "User not found", null));
             }
+            return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                    .body(new ApiResponse<>(HttpStatus.NOT_FOUND.value(), "User not found", null));
         }
 
         if (email != null) {
             UserDTO user = userService.getUserByEmail(email).orElse(null);
             if (user != null) {
                 return ResponseEntity.ok(new ApiResponse<>(HttpStatus.OK.value(), "User fetched successfully", user));
-            } else {
-                return ResponseEntity.status(HttpStatus.NOT_FOUND)
-                        .body(new ApiResponse<>(HttpStatus.NOT_FOUND.value(), "User not found", null));
             }
+            return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                    .body(new ApiResponse<>(HttpStatus.NOT_FOUND.value(), "User not found", null));
+        }
+
+        if (role != null) {
+            // Validate role input
+            String upperRole = role.toUpperCase();
+            if (!List.of("ADMIN", "MENTOR", "STUDENT").contains(upperRole)) {
+                return ResponseEntity.badRequest()
+                        .body(new ApiResponse<>(HttpStatus.BAD_REQUEST.value(), 
+                              "Invalid role. Must be ADMIN, MENTOR, or STUDENT", null));
+            }
+            
+            List<UserDTO> users = userService.getUsersByRole(upperRole);
+            return ResponseEntity.ok(new ApiResponse<>(HttpStatus.OK.value(), 
+                                 "Users fetched successfully", users));
         }
 
         List<UserDTO> users = userService.getAllUsers();

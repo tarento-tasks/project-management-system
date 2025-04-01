@@ -12,6 +12,12 @@ import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
+import org.springframework.web.cors.CorsConfiguration;
+import org.springframework.web.cors.CorsConfigurationSource;
+import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
+
+import java.util.Arrays;
+import java.util.List;
 
 @Configuration
 @EnableWebSecurity
@@ -26,37 +32,47 @@ public class SecurityConfig {
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         http
+                .cors(cors -> cors.configurationSource(corsConfigurationSource())) // Enable CORS
                 .csrf(csrf -> csrf.disable()) 
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS)) 
                 .authorizeHttpRequests(auth -> auth
-                     
                         .requestMatchers("/api/auth/**").permitAll()
                         .requestMatchers(HttpMethod.POST, "/api/auth/logout").authenticated()
                         .requestMatchers("/api/roles/**").hasRole("ADMIN")
                         .requestMatchers("/api/users/**").hasAnyRole("ADMIN","MENTOR","STUDENT")
                         .requestMatchers("/api/projects/**").hasAnyRole("ADMIN", "MENTOR","STUDENT") 
+
+                        .requestMatchers(HttpMethod.GET, "/api/users?role=MENTOR").hasAnyRole("ADMIN", "MENTOR", "STUDENT")
                         .requestMatchers("/api/tasks/**").hasAnyRole("ADMIN", "MENTOR", "STUDENT")
                         .requestMatchers("/api/skills/**").hasAnyRole("ADMIN","MENTOR","STUDENT")
                         .requestMatchers("/api/skill-mapping/**").hasAnyRole("ADMIN","MENTOR","STUDENT") 
-                        
                         .requestMatchers(HttpMethod.POST, "/api/project-enrollment").hasAnyRole("STUDENT", "ADMIN")  
                         .requestMatchers(HttpMethod.GET, "/api/project-enrollment").hasAnyRole("ADMIN", "STUDENT")  
                         .requestMatchers(HttpMethod.DELETE, "/api/project-enrollment/**").hasAnyRole("STUDENT", "ADMIN")  
-
                         .requestMatchers("/api/stu-task/**").hasAnyRole("ADMIN","MENTOR","STUDENT") 
                         .requestMatchers("/api/tasks/*/comments").hasAnyRole("ADMIN","MENTOR","STUDENT")
                         .requestMatchers("/api/tasks/*/feedback").hasAnyRole("ADMIN","MENTOR","STUDENT")
-                        
-                        
-                        .requestMatchers(HttpMethod.GET, "/api/project-skills/recommendations/**").hasAnyRole("STUDENT", "MENTOR", "ADMIN") // Fixed path issue
+                        .requestMatchers(HttpMethod.GET, "/api/project-skills/recommendations/**").hasAnyRole("STUDENT", "MENTOR", "ADMIN")
                         .requestMatchers(HttpMethod.POST, "/api/project-skills").hasRole("ADMIN")
                         .requestMatchers(HttpMethod.GET, "/api/project-skills").hasAnyRole("STUDENT", "MENTOR", "ADMIN")
-                
                         .anyRequest().authenticated()
                 )
                 .addFilterBefore(new JWTFilter(jwtUtil), UsernamePasswordAuthenticationFilter.class); 
         
         return http.build();
+    }
+
+    @Bean
+    public CorsConfigurationSource corsConfigurationSource() {
+        CorsConfiguration configuration = new CorsConfiguration();
+        configuration.setAllowedOrigins(List.of("http://localhost:5173")); // Allow your frontend origin
+        configuration.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "DELETE", "OPTIONS")); // Allowed HTTP methods
+        configuration.setAllowedHeaders(List.of("*")); // Allow all headers
+        configuration.setAllowCredentials(true); // Allow credentials
+        
+        UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
+        source.registerCorsConfiguration("/**", configuration); // Apply to all paths
+        return source;
     }
 
     @Bean

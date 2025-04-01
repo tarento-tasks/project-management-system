@@ -1,5 +1,6 @@
 package com.example.project_management_backend.Service;
 
+import com.example.project_management_backend.DTO.RoleDTO;
 import com.example.project_management_backend.DTO.UserDTO;
 import com.example.project_management_backend.Model.Role;
 import com.example.project_management_backend.Model.User;
@@ -50,6 +51,32 @@ public class UserService {
         return users.stream().map(this::convertToDTO).collect(Collectors.toList());
     }
 
+    
+
+    @Transactional
+    public List<UserDTO> getUsersByRole(String role) {
+        String roleName = role.toUpperCase(); // Spring Security format
+        
+        List<User> users = userRepository.findByRoleName(roleName);
+        
+        return users.stream()
+                .map(user -> {
+                    UserDTO dto = new UserDTO();
+                    dto.setUserId(user.getUserId());
+                    dto.setName(user.getName());
+                    dto.setEmail(user.getEmail());
+                    dto.setDob(user.getDob());
+                    dto.setPreviousWork(user.getPreviousWork());
+                    dto.setQualifications(user.getQualifications());
+                    dto.setRoleId(user.getRole().getRoleId()); // Only setting roleId
+                    dto.setCreatedAt(user.getCreatedAt());
+                    dto.setModifiedAt(user.getModifiedAt());
+                    dto.setDeletedAt(user.getDeletedAt());
+                    
+                    return dto;
+                })
+                .collect(Collectors.toList());
+    }
     @Transactional
     public Optional<UserDTO> getUserById(UUID id) {
         return userRepository.findByUserIdAndDeletedAtIsNull(id)
