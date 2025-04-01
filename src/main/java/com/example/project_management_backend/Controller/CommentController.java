@@ -9,7 +9,9 @@ import org.springframework.security.access.prepost.PreAuthorize;
 import java.util.List;
 import java.util.UUID;
 
+
 @RestController
+@CrossOrigin(origins = "http://localhost:5173")
 @RequestMapping("/api/tasks/{taskId}/comments")
 public class CommentController {
 

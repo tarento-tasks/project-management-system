@@ -14,6 +14,8 @@ import java.util.Optional;
 import java.util.UUID;
 
 @RestController
+
+@CrossOrigin(origins = "http://localhost:5173")
 @RequestMapping("/api/projects")
 public class ProjectController {
 
@@ -27,8 +29,8 @@ public class ProjectController {
         List<ProjectDTO> projects = projectService.getProjects(Optional.ofNullable(id));
         return ResponseEntity.ok(new ApiResponse<>(HttpStatus.OK.value(), "Projects fetched successfully", projects));
     }
-
     
+
     @PostMapping
     @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<ApiResponse<ProjectDTO>> createOrUpdateProject(

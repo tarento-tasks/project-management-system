@@ -51,7 +51,7 @@ public class AuthService {
         
         String token = jwtUtil.generateToken(user);
 
-        String roleName = user.getRole().getRoleName(); // Assuming User has a Role entity linked
+        String roleName = user.getRole().getRoleName(); 
 
     LoginResponse loginResponse = new LoginResponse();
     loginResponse.setToken(token);

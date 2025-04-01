@@ -14,6 +14,8 @@ import com.example.project_management_backend.DTO.ApiResponse;
 
 
 @RestController
+@CrossOrigin(origins = "http://localhost:5173")
+
 @RequestMapping("/api/stu-task")
 @RequiredArgsConstructor
 public class StuTaskController {

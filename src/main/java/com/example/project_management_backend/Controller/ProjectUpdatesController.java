@@ -13,6 +13,7 @@ import java.util.UUID;
 import com.example.project_management_backend.config.JwtUtil;
 
 @RestController
+@CrossOrigin(origins = "http://localhost:5173")
 @RequestMapping("/api/project-updates") 
 public class ProjectUpdatesController {
 

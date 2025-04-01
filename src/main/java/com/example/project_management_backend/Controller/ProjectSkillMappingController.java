@@ -15,6 +15,7 @@ import java.util.UUID;
  
 
 @RestController
+@CrossOrigin(origins = "http://localhost:5173")
 @RequestMapping("/api/project-skills")
 public class ProjectSkillMappingController {
 
@@ -26,6 +27,12 @@ public class ProjectSkillMappingController {
     public ResponseEntity<ApiResponse<ProjectSkillMappingDTO>> addSkillToProject(
             @RequestBody ProjectSkillMappingDTO request) {
         return ResponseEntity.ok(projectSkillMappingService.addSkillToProject(request.getProjectId(), request.getSkillId()));
+    }
+
+    @GetMapping("/project/{projectId}")
+    @PreAuthorize("hasAnyRole('STUDENT', 'MENTOR', 'ADMIN')")
+    public ResponseEntity<ApiResponse<?>> getSkillsByProjectId(@PathVariable UUID projectId) {
+        return ResponseEntity.ok(projectSkillMappingService.getSkillsByProjectId(projectId));
     }
 
     @GetMapping

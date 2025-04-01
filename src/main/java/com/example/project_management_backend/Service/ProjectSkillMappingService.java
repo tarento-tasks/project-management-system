@@ -3,6 +3,7 @@ package com.example.project_management_backend.Service;
 import com.example.project_management_backend.DTO.ApiResponse;
 import com.example.project_management_backend.DTO.ProjectDTO;
 import com.example.project_management_backend.DTO.ProjectSkillMappingDTO;
+import com.example.project_management_backend.DTO.SkillDTO;
 import com.example.project_management_backend.Model.*;
 import com.example.project_management_backend.Repository.*;
 
@@ -99,6 +100,28 @@ public class ProjectSkillMappingService {
 
         return new ApiResponse<>(HttpStatus.OK.value(), "Recommended projects", projectDTOs);
     }
+
+   
+    public ApiResponse<List<SkillDTO>> getSkillsByProjectId(UUID projectId) {
+        List<ProjectSkillMapping> mappings = projectSkillMappingRepository.findByProject_ProjectId(projectId);
+        
+        if (mappings.isEmpty()) {
+            return new ApiResponse<>(HttpStatus.OK.value(), "No skills found for this project", Collections.emptyList());
+        }
+
+        List<SkillDTO> skills = mappings.stream()
+                .map(mapping -> {
+                    Skill skill = mapping.getSkill();
+                    return new SkillDTO(
+                            skill.getSkillId(),
+                            skill.getSkillName()
+                    );
+                })
+                .collect(Collectors.toList());
+
+        return new ApiResponse<>(HttpStatus.OK.value(), "Skills for project retrieved successfully", skills);
+    }
+
     public ApiResponse<List<User>> getRecommendedStudentsForProject(UUID projectId) {
      
         List<UUID> requiredSkillIds = projectSkillMappingRepository.findByProject_ProjectId(projectId)

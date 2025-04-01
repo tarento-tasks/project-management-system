@@ -1,5 +1,4 @@
 package com.example.project_management_backend.Controller;
-import org.springframework.web.bind.annotation.CrossOrigin;
 import com.example.project_management_backend.DTO.ApiResponse;
 import com.example.project_management_backend.DTO.LoginRequest;
 import com.example.project_management_backend.DTO.LoginResponse;
@@ -9,7 +8,6 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
-import org.springframework.web.bind.annotation.CrossOrigin;
 import com.example.project_management_backend.Model.User;
 import com.example.project_management_backend.Repository.UserRepository;
 import com.example.project_management_backend.Service.AuthService;
@@ -39,16 +37,11 @@ public class AuthController {
     }
 
     
-    @PostMapping("/login")
-    public ResponseEntity<ApiResponse<LoginResponse>> login(@RequestBody LoginRequest loginRequest) {
-        try {
-            LoginResponse loginResponse = authService.login(loginRequest);
-            return ResponseEntity.ok(new ApiResponse<>(HttpStatus.OK.value(), "Login successful", loginResponse));
-        } catch (RuntimeException e) {
-            return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
-                    .body(new ApiResponse<>(HttpStatus.UNAUTHORIZED.value(), "Invalid credentials", null));
-        }
-    }
+    @PostMapping("/login") 
+public ResponseEntity<LoginResponse> login(@RequestBody LoginRequest loginRequest) {
+
+return ResponseEntity.ok(authService.login(loginRequest));
+}
 
 
     @PostMapping("/logout")
