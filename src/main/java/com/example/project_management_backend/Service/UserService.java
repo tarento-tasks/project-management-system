@@ -64,14 +64,8 @@ public class UserService {
                     UserDTO dto = new UserDTO();
                     dto.setUserId(user.getUserId());
                     dto.setName(user.getName());
-                    dto.setEmail(user.getEmail());
-                    dto.setDob(user.getDob());
-                    dto.setPreviousWork(user.getPreviousWork());
-                    dto.setQualifications(user.getQualifications());
+                  
                     dto.setRoleId(user.getRole().getRoleId()); // Only setting roleId
-                    dto.setCreatedAt(user.getCreatedAt());
-                    dto.setModifiedAt(user.getModifiedAt());
-                    dto.setDeletedAt(user.getDeletedAt());
                     
                     return dto;
                 })

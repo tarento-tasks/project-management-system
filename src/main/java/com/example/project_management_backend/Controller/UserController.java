@@ -52,7 +52,8 @@ public class UserController {
 
         if (role != null) {
             // Validate role input
-            String upperRole = role.toUpperCase();
+            String upperRole = role.toUpperCase().replace("ROLE_", "");;
+            String cleanRole = role.toUpperCase().replace("ROLE_", "");
             if (!List.of("ADMIN", "MENTOR", "STUDENT").contains(upperRole)) {
                 return ResponseEntity.badRequest()
                         .body(new ApiResponse<>(HttpStatus.BAD_REQUEST.value(), 

@@ -11,6 +11,7 @@ import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
+import org.springframework.security.web.authentication.Http403ForbiddenEntryPoint;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
@@ -41,13 +42,15 @@ public class SecurityConfig {
                         .requestMatchers("/api/roles/**").hasRole("ADMIN")
                         .requestMatchers("/api/users/**").hasAnyRole("ADMIN","MENTOR","STUDENT")
                         .requestMatchers("/api/projects/**").hasAnyRole("ADMIN", "MENTOR","STUDENT") 
+                        
 
-                        .requestMatchers(HttpMethod.GET, "/api/users?role=MENTOR").hasAnyRole("ADMIN", "MENTOR", "STUDENT")
+                        
                         .requestMatchers("/api/tasks/**").hasAnyRole("ADMIN", "MENTOR", "STUDENT")
                         .requestMatchers("/api/skills/**").hasAnyRole("ADMIN","MENTOR","STUDENT")
                         .requestMatchers("/api/skill-mapping/**").hasAnyRole("ADMIN","MENTOR","STUDENT") 
                         .requestMatchers(HttpMethod.POST, "/api/project-enrollment").hasAnyRole("STUDENT", "ADMIN")  
-                        .requestMatchers(HttpMethod.GET, "/api/project-enrollment").hasAnyRole("ADMIN", "STUDENT")  
+                        .requestMatchers(HttpMethod.GET, "/api/project-enrollment").hasAnyRole("ADMIN", "STUDENT","MENTOR")  
+                        
                         .requestMatchers(HttpMethod.DELETE, "/api/project-enrollment/**").hasAnyRole("STUDENT", "ADMIN")  
                         .requestMatchers("/api/stu-task/**").hasAnyRole("ADMIN","MENTOR","STUDENT") 
                         .requestMatchers("/api/tasks/*/comments").hasAnyRole("ADMIN","MENTOR","STUDENT")
@@ -57,15 +60,25 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.GET, "/api/project-skills").hasAnyRole("STUDENT", "MENTOR", "ADMIN")
                         .anyRequest().authenticated()
                 )
-                .addFilterBefore(new JWTFilter(jwtUtil), UsernamePasswordAuthenticationFilter.class); 
+                
+                .sessionManagement(session -> session
+                .sessionCreationPolicy(SessionCreationPolicy.STATELESS)
+            )
+            .addFilterBefore(new JWTFilter(jwtUtil), UsernamePasswordAuthenticationFilter.class)
+            .exceptionHandling(ex -> ex
+                .authenticationEntryPoint(new Http403ForbiddenEntryPoint())
+            );
         
+    
+
         return http.build();
     }
 
     @Bean
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration configuration = new CorsConfiguration();
-        configuration.setAllowedOrigins(List.of("http://localhost:5173")); // Allow your frontend origin
+        configuration.setAllowedOrigins(Arrays.asList("http://localhost:5173", "http://localhost:3000"));
+
         configuration.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "DELETE", "OPTIONS")); // Allowed HTTP methods
         configuration.setAllowedHeaders(List.of("*")); // Allow all headers
         configuration.setAllowCredentials(true); // Allow credentials

@@ -11,8 +11,9 @@ import java.util.Optional;
 import java.util.UUID;
 
 public interface UserRepository extends JpaRepository<User, UUID> {
-    List<User> findByRole_RoleName(String roleName); // Fetch users by role name
     
+    List<User> findByRole_RoleName(String roleName); // Fetch users by role name
+    Optional<User> findByEmail(String email);
     List<User> findByDeletedAtIsNull();
     Optional<User> findByEmailAndDeletedAtIsNull(String email);
     Optional<User> findByUserIdAndDeletedAtIsNull(UUID userId);
