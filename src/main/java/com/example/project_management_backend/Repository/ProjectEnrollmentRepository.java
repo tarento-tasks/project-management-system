@@ -1,5 +1,4 @@
 package com.example.project_management_backend.Repository;
-
 import com.example.project_management_backend.Model.ProjectEnrollment;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
@@ -18,6 +17,9 @@ public interface ProjectEnrollmentRepository extends JpaRepository<ProjectEnroll
 
     Optional<ProjectEnrollment> findByStudent_UserIdAndProject_ProjectIdAndDeletedAtIsNull(UUID studentId, UUID projectId);
 
-  
+    List<ProjectEnrollment> findByStudent_UserIdAndStatusAndDeletedAtIsNullAndProject_DeletedAtIsNull(
+    UUID studentId, 
+    String status);
+
     boolean existsByStudent_UserIdAndProject_ProjectIdAndDeletedAtIsNull(UUID studentId, UUID projectId);
 }

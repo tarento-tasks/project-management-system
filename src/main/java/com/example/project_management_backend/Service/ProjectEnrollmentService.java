@@ -16,6 +16,7 @@ import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
+import java.util.stream.Collectors;
 
 @Service
 public class ProjectEnrollmentService {
@@ -66,6 +67,29 @@ public class ProjectEnrollmentService {
 
         return enrollmentRepository.save(enrollment);
     }
+
+    public List<Project> getApprovedProjectsForStudent(UUID studentId) {
+    // Verify student exists
+    User student = userRepository.findById(studentId)
+            .orElseThrow(() -> new RuntimeException("Student not found"));
+    
+    // Check if the user is actually a student
+    if (!"STUDENT".equals(student.getRole().getRoleName())) {
+        throw new AccessDeniedException("Only students can have project enrollments");
+    }
+    
+    // Get all approved enrollments for this student
+    List<ProjectEnrollment> enrollments = enrollmentRepository
+            .findByStudent_UserIdAndStatusAndDeletedAtIsNullAndProject_DeletedAtIsNull(
+                studentId, 
+                "APPROVED"
+            );
+    
+    // Extract the projects from the enrollments
+    return enrollments.stream()
+            .map(ProjectEnrollment::getProject)
+            .collect(Collectors.toList());
+}
 
     public List<ProjectEnrollment> getAllEnrollments() {
         return enrollmentRepository.findByProject_DeletedAtIsNullAndDeletedAtIsNull();

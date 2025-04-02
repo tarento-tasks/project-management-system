@@ -5,6 +5,8 @@ import com.example.project_management_backend.Repository.UserRepository;
 import com.example.project_management_backend.config.JwtUtil;
 import com.example.project_management_backend.DTO.*;
 
+import java.util.UUID;
+
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
@@ -52,10 +54,13 @@ public class AuthService {
         String token = jwtUtil.generateToken(user);
 
         String roleName = user.getRole().getRoleName(); // Assuming User has a Role entity linked
+        UUID userId = user.getUserId();
 
     LoginResponse loginResponse = new LoginResponse();
     loginResponse.setToken(token);
     loginResponse.setRole(roleName);
+    loginResponse.setUserId(userId); 
+
         return loginResponse;
         
     }

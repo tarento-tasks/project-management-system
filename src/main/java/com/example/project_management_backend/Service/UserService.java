@@ -46,6 +46,22 @@ public class UserService {
         return null; // If no authenticated user, return null.
     }
 
+    public User getAuthenticatedUser() {
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        
+        if (authentication == null || !authentication.isAuthenticated()) {
+            throw new RuntimeException("User not authenticated");
+        }
+    
+        Object principal = authentication.getPrincipal();
+        if (principal instanceof User) {
+            return (User) principal;
+        } else {
+            throw new RuntimeException("Authentication principal is not a valid User instance");
+        }
+    }
+    
+
     
     public UserDTO convertToDTO(User user) {
         UUID roleId = (user.getRole() != null) ? user.getRole().getRoleId() : null;

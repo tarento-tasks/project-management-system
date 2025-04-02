@@ -21,18 +21,24 @@ import java.util.stream.Collectors;
 @Service
 public class TaskService {
 
-    @Autowired
-    private TaskRepository taskRepository;
+    private final TaskRepository taskRepository;
+    private final ProjectRepository projectRepository;
+    private final UserRepository userRepository;
+    private final StuTaskRepository stuTaskRepository;
+    private final UserService userService; // Inject UserService
 
     @Autowired
-    private ProjectRepository projectRepository;
-
-    @Autowired
-    private UserRepository userRepository;
-
-    @Autowired
-    private StuTaskRepository stuTaskRepository;
-
+    public TaskService(TaskRepository taskRepository, 
+                       ProjectRepository projectRepository,
+                       UserRepository userRepository,
+                       StuTaskRepository stuTaskRepository,
+                       UserService userService) { // Add UserService
+        this.taskRepository = taskRepository;
+        this.projectRepository = projectRepository;
+        this.userRepository = userRepository;
+        this.stuTaskRepository = stuTaskRepository;
+        this.userService = userService; // Initialize userService
+    }
     
     @Transactional
     public TaskDTO createTask(TaskDTO taskDTO) {
@@ -113,15 +119,30 @@ public class TaskService {
 
    
     @Transactional
+    public List<TaskDTO> getAllTasks() {
+        User user = getAuthenticatedUser();
+        
+        // Only Admin can fetch all tasks
+        if (!user.getRole().getRoleName().equals("ADMIN")) {
+            throw new RuntimeException("You are not authorized to view all tasks");
+        }
+        
+        return taskRepository.findAll().stream()
+                .map(this::convertToDTO)
+                .collect(Collectors.toList());
+    }
+
+    /**
+     * Fetch tasks by projectId - Accessible by Admin, Mentor, or Assigned Student
+     */
+    @Transactional
     public List<TaskDTO> getTasksByProjectId(UUID projectId) {
-   
         User user = getAuthenticatedUser();
 
-   
         Project project = projectRepository.findById(projectId)
                 .orElseThrow(() -> new RuntimeException("Project not found"));
 
-        
+        // Check authorization
         boolean isAdmin = user.getRole().getRoleName().equals("ADMIN");
         boolean isAssignedMentor = user.getUserId().equals(project.getMentor().getUserId());
         boolean isAssignedStudent = isAssignedStudent(project.getProjectId());
@@ -130,11 +151,12 @@ public class TaskService {
             throw new RuntimeException("You are not authorized to view tasks for this project");
         }
 
-     
         return taskRepository.findByProject_ProjectId(projectId).stream()
                 .map(this::convertToDTO)
                 .collect(Collectors.toList());
     }
+
+    
 
     
     @Transactional

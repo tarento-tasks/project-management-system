@@ -1,15 +1,18 @@
 package com.example.project_management_backend.Controller;
-
+import com.example.project_management_backend.Model.User;
 import com.example.project_management_backend.DTO.ApiResponse;
 import com.example.project_management_backend.DTO.ProjectEnrollmentDto;
+import com.example.project_management_backend.Model.Project;
 import com.example.project_management_backend.Model.ProjectEnrollment;
+import com.example.project_management_backend.Repository.UserRepository;
 import com.example.project_management_backend.Service.ProjectEnrollmentService;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
-import org.springframework.web.bind.annotation.CrossOrigin;
 import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.core.Authentication;
+import org.springframework.beans.factory.annotation.Autowired;
 
 import java.util.List;
 import java.util.UUID;
@@ -21,9 +24,15 @@ public class ProjectEnrollmentController {
 
     private final ProjectEnrollmentService enrollmentService;
 
-    public ProjectEnrollmentController(ProjectEnrollmentService enrollmentService) {
+    private final UserRepository userRepository;
+
+    // Constructor-based injection for both services
+    public ProjectEnrollmentController(ProjectEnrollmentService enrollmentService, UserRepository userRepository) {
         this.enrollmentService = enrollmentService;
+        this.userRepository = userRepository;
     }
+
+    
 
    
  
@@ -51,31 +60,47 @@ public ResponseEntity<ApiResponse<ProjectEnrollment>> createOrUpdateEnrollment(
 
    
     @GetMapping
-    @PreAuthorize("hasAnyRole('ADMIN', 'STUDENT')")
-    public ResponseEntity<ApiResponse<?>> getEnrollments(
-        @RequestParam(value = "enrollmentId", required = false) UUID enrollmentId
-    ) {
-        if (enrollmentId != null) {
-            
-            ProjectEnrollment enrollment = enrollmentService.getEnrollmentById(enrollmentId);
-            return ResponseEntity.ok(
-                new ApiResponse<>(HttpStatus.OK.value(), "Enrollment fetched successfully", enrollment)
-            );
-        } else {
-           
-            if (SecurityContextHolder.getContext().getAuthentication().getAuthorities().stream()
-                .anyMatch(grantedAuthority -> grantedAuthority.getAuthority().equals("ROLE_ADMIN"))) {
-                List<ProjectEnrollment> enrollments = enrollmentService.getAllEnrollments();
-                return ResponseEntity.ok(
-                    new ApiResponse<>(HttpStatus.OK.value(), "All enrollments fetched successfully", enrollments)
-                );
-            } else {
-                return ResponseEntity.status(HttpStatus.FORBIDDEN).body(
-                    new ApiResponse<>(HttpStatus.FORBIDDEN.value(), "Access denied", null)
-                );
-            }
-        }
+@PreAuthorize("hasAnyRole('ADMIN', 'STUDENT')")
+public ResponseEntity<ApiResponse<?>> getEnrollments(
+    @RequestParam(value = "enrollmentId", required = false) UUID enrollmentId,
+    @RequestParam(value = "studentId", required = false) UUID studentId
+) {
+    if (enrollmentId != null) {
+        ProjectEnrollment enrollment = enrollmentService.getEnrollmentById(enrollmentId);
+        return ResponseEntity.ok(
+            new ApiResponse<>(HttpStatus.OK.value(), "Enrollment fetched successfully", enrollment)
+        );
+    } 
+
+    Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+    User user = userRepository.findByEmailAndDeletedAtIsNull(authentication.getName())
+            .orElseThrow(() -> new RuntimeException("User not found"));
+
+    if (user.getRole().getRoleName().equals("STUDENT")) {
+        List<Project> approvedProjects = enrollmentService.getApprovedProjectsForStudent(user.getUserId());
+        return ResponseEntity.ok(
+            new ApiResponse<>(HttpStatus.OK.value(), "Approved projects fetched successfully", approvedProjects)
+        );
     }
+
+    if (user.getRole().getRoleName().equals("ADMIN")) {
+        if (studentId != null) {
+            List<Project> approvedProjects = enrollmentService.getApprovedProjectsForStudent(studentId);
+            return ResponseEntity.ok(
+                new ApiResponse<>(HttpStatus.OK.value(), "Approved projects for student fetched successfully", approvedProjects)
+            );
+        }
+        List<ProjectEnrollment> enrollments = enrollmentService.getAllEnrollments();
+        return ResponseEntity.ok(
+            new ApiResponse<>(HttpStatus.OK.value(), "All enrollments fetched successfully", enrollments)
+        );
+    }
+
+    return ResponseEntity.status(HttpStatus.FORBIDDEN).body(
+        new ApiResponse<>(HttpStatus.FORBIDDEN.value(), "Access denied", null)
+    );
+}
+
 
     @DeleteMapping("/{enrollmentId}")
     @PreAuthorize("hasAnyRole('ADMIN', 'STUDENT')")

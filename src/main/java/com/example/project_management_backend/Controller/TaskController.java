@@ -14,7 +14,7 @@ import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeParseException;
 import java.util.List;
 import java.util.UUID;
-import org.springframework.web.bind.annotation.CrossOrigin;
+
 import com.example.project_management_backend.DTO.ApiResponse;
 
 @RestController
@@ -82,13 +82,26 @@ public class TaskController {
     }
 
     
-    @GetMapping("/project/{projectId}")
-    @PreAuthorize("hasRole('ADMIN') or @taskService.isAssignedMentor(#projectId) or @taskService.isAssignedStudent(#projectId)")
-    public ResponseEntity<ApiResponse<List<TaskDTO>>> getTasksByProjectId(@PathVariable UUID projectId) {
-        List<TaskDTO> tasks = taskService.getTasksByProjectId(projectId);
+    @GetMapping
+   
+    public ResponseEntity<ApiResponse<List<TaskDTO>>> getTasks(
+            @RequestParam(required = false) UUID projectId) {
+
+        List<TaskDTO> tasks;
+
+        if (projectId == null) {
+            // Fetch all tasks
+            tasks = taskService.getAllTasks();
+        } else {
+            // Fetch tasks by projectId
+            tasks = taskService.getTasksByProjectId(projectId);
+        }
+
         ApiResponse<List<TaskDTO>> response = new ApiResponse<>(200, "Tasks retrieved successfully", tasks);
         return ResponseEntity.ok(response);
     }
+
+   
 
    
     @DeleteMapping("/{taskId}")
@@ -96,7 +109,7 @@ public class TaskController {
     public ResponseEntity<ApiResponse<Void>> deleteTask(@PathVariable UUID taskId) {
         taskService.deleteTask(taskId);
         ApiResponse<Void> response = new ApiResponse<>(200, "Task deleted successfully", null);
-        return ResponseEntity.ok(response);
+         return ResponseEntity.ok(response);
     }
 }
     

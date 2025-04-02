@@ -12,7 +12,7 @@ import java.util.UUID;
 import com.example.project_management_backend.DTO.ApiResponse;
 
 
-
+@CrossOrigin(origins = "http://localhost:5173")
 @RestController
 @RequestMapping("/api/stu-task")
 @RequiredArgsConstructor
