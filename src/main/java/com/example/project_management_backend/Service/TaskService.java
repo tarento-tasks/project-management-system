@@ -139,8 +139,23 @@ public class TaskService {
                 .map(this::convertToDTO)
                 .collect(Collectors.toList());
     }
+   
 
-    
+    @Transactional
+    public List<TaskDTO> getAllTasks() {
+        User user = getAuthenticatedUser();
+        
+        
+        if (!user.getRole().getRoleName().equals("ADMIN")) {
+            throw new RuntimeException("You are not authorized to view all tasks");
+        }
+        
+        return taskRepository.findAll().stream()
+                .map(this::convertToDTO)
+                .collect(Collectors.toList());
+    }
+
+   
     @Transactional
     public void deleteTask(UUID taskId) {
       
@@ -171,7 +186,7 @@ public class TaskService {
         dto.setDueDate(task.getDueDate());
         dto.setCompleteStatus(task.getCompleteStatus());
         dto.setStudentStatus(task.getStudentStatus());
-        dto.setAttachments(task.getAttachments()); // BLOB field
+        dto.setAttachments(task.getAttachments()); 
         dto.setProjectId(task.getProject().getProjectId());
         return dto;
     }
@@ -191,15 +206,15 @@ public class TaskService {
         return user.getUserId().equals(project.getMentor().getUserId());
     }
 
-    // Helper method to check if the user is an assigned student
+    
     public boolean isAssignedStudent(UUID projectId) {
-        // Fetch the authenticated user
+        
         User user = getAuthenticatedUser();
 
-        // Fetch all tasks for the project
+        
         List<Task> tasks = taskRepository.findByProject_ProjectId(projectId);
 
-        // Check if the student is assigned to any task in the project
+        
         for (Task task : tasks) {
             boolean isAssigned = stuTaskRepository.existsById_StudentIdAndId_TaskIdAndDeletedAtIsNull(
                     user.getUserId(), task.getTaskId());

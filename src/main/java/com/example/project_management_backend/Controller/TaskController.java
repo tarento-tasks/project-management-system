@@ -82,13 +82,25 @@ public class TaskController {
     }
 
     
-    @GetMapping("/project/{projectId}")
-    @PreAuthorize("hasRole('ADMIN') or @taskService.isAssignedMentor(#projectId) or @taskService.isAssignedStudent(#projectId)")
-    public ResponseEntity<ApiResponse<List<TaskDTO>>> getTasksByProjectId(@PathVariable UUID projectId) {
-        List<TaskDTO> tasks = taskService.getTasksByProjectId(projectId);
+    @GetMapping
+   
+    public ResponseEntity<ApiResponse<List<TaskDTO>>> getTasks(
+            @RequestParam(required = false) UUID projectId) {
+
+        List<TaskDTO> tasks;
+
+        if (projectId == null) {
+            // Fetch all tasks
+            tasks = taskService.getAllTasks();
+        } else {
+            // Fetch tasks by projectId
+            tasks = taskService.getTasksByProjectId(projectId);
+        }
+
         ApiResponse<List<TaskDTO>> response = new ApiResponse<>(200, "Tasks retrieved successfully", tasks);
         return ResponseEntity.ok(response);
     }
+
 
    
     @DeleteMapping("/{taskId}")

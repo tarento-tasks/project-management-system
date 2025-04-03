@@ -1,11 +1,12 @@
 package com.example.project_management_backend.Controller;
 import com.example.project_management_backend.DTO.StuTaskDTO;
+import com.example.project_management_backend.DTO.TaskDTO;
 import com.example.project_management_backend.Service.StuTaskService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
-
+import java.util.Optional;
 import java.util.List;
 import java.util.UUID;
 
@@ -32,14 +33,24 @@ public class StuTaskController {
     }
 
  
-    @GetMapping("/{taskId}")
-    @PreAuthorize("hasAnyRole('MENTOR', 'ADMIN','STUDENT')")
-    public ResponseEntity<ApiResponse<List<StuTaskDTO>>> getStudentsByTaskId(@PathVariable UUID taskId) {
+    @GetMapping
+    @PreAuthorize("hasAnyRole('MENTOR', 'ADMIN', 'STUDENT')")
+    public ResponseEntity<ApiResponse<?>> getTasksOrStudents(
+        @RequestParam(required = false) UUID taskId,
+        @RequestParam(required = false) UUID studentId) {
+    
+    if (taskId != null) {
         List<StuTaskDTO> students = stuTaskService.getStudentsByTaskId(taskId);
-        ApiResponse<List<StuTaskDTO>> response = new ApiResponse<>(200, "Students retrieved successfully", students);
-        return ResponseEntity.ok(response);
+        return ResponseEntity.ok(new ApiResponse<>(200, "Students retrieved successfully", students));
+    } else if (studentId != null) {
+        List<TaskDTO> tasks = stuTaskService.getTasksByStudentId(studentId);
+        return ResponseEntity.ok(new ApiResponse<>(200, "Tasks retrieved successfully", tasks));
+    } else {
+        return ResponseEntity.badRequest().body(new ApiResponse<>(400, "Invalid request: Provide either taskId or studentId", null));
     }
-
+}
+ 
+    
  
     @DeleteMapping("/{studentId}/{taskId}")
     @PreAuthorize("hasAnyRole('MENTOR', 'ADMIN')")

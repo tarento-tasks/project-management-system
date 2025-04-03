@@ -1,11 +1,14 @@
 package com.example.project_management_backend.Service;
 
+import com.example.project_management_backend.DTO.ApiResponse;
 import com.example.project_management_backend.DTO.ProjectDTO;
+import com.example.project_management_backend.Exception.ResourceNotFoundException;
 import com.example.project_management_backend.Model.Project;
 import com.example.project_management_backend.Model.User;
 import com.example.project_management_backend.Repository.ProjectRepository;
 import com.example.project_management_backend.Repository.UserRepository;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import jakarta.transaction.Transactional;
 
@@ -41,21 +44,21 @@ public class ProjectService {
     }
 
    
-    @Transactional
-    public List<ProjectDTO> getProjects(Optional<UUID> projectId) {
-        if (projectId.isPresent()) {
-            return projectRepository.findByProjectIdAndDeletedAtIsNull(projectId.get())
-                    .map(this::convertToDTO)
-                    .map(List::of)
-                    .orElseThrow(() -> new RuntimeException("Project not found"));
-        }
-        return projectRepository.findByDeletedAtIsNull().stream()
-                .map(this::convertToDTO)
-                .collect(Collectors.toList());
-    }
+  
     
 
-    
+      @Transactional
+    public ApiResponse<List<ProjectDTO>> getProjects(Optional<UUID> projectId) {
+        if (projectId.isPresent()) {
+            return projectRepository.findByProjectIdAndDeletedAtIsNull(projectId.get())
+                    .map(project -> new ApiResponse<>(HttpStatus.OK.value(), "Project retrieved successfully", List.of(convertToDTO(project))))
+                    .orElseThrow(() -> new ResourceNotFoundException("Project not found or has been deleted"));
+        }
+        List<ProjectDTO> projectList = projectRepository.findByDeletedAtIsNull().stream()
+                .map(this::convertToDTO)
+                .collect(Collectors.toList());
+        return new ApiResponse<>(HttpStatus.OK.value(), "Projects retrieved successfully", projectList);
+    }
    
     @Transactional
     public ProjectDTO saveOrUpdateProject(Optional<UUID> projectId, ProjectDTO projectDTO) {

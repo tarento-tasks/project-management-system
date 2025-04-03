@@ -13,6 +13,7 @@ import java.util.UUID;
 public interface StuTaskRepository extends JpaRepository<StuTask, StuTaskId> {
     List<StuTask> findByTaskTaskId(UUID taskId);
     boolean existsById_StudentIdAndId_TaskIdAndDeletedAtIsNull(UUID studentId, UUID taskId);
+    List<StuTask> findByStudentUserId(UUID userId);
 }
 
 

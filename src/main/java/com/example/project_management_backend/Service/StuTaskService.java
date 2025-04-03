@@ -1,5 +1,7 @@
 package com.example.project_management_backend.Service;
 import com.example.project_management_backend.DTO.StuTaskDTO;
+import com.example.project_management_backend.DTO.TaskDTO;
+import com.example.project_management_backend.Exception.ResourceNotFoundException;
 import com.example.project_management_backend.Model.StuTask;
 import com.example.project_management_backend.Model.StuTaskId;
 import com.example.project_management_backend.Model.Task;
@@ -12,7 +14,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.web.server.ResponseStatusException;
-
+import java.util.Optional;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.UUID;
@@ -63,7 +65,36 @@ public class StuTaskService {
                 .map(stuTask -> new StuTaskDTO(stuTask.getStudent().getUserId(), stuTask.getTask().getTaskId()))
                 .collect(Collectors.toList());
     }
-
+    public List<TaskDTO> getTasksByStudentId(UUID studentId) {
+        Optional<User> student = userRepository.findByUserIdAndDeletedAtIsNull(studentId);
+    
+        if (student.isEmpty()) {
+            throw new ResourceNotFoundException("Student not found or has been deleted.");
+        }
+    
+        List<StuTask> stuTasks = stuTaskRepository.findByStudentUserId(studentId);
+        return stuTasks.stream()
+                .filter(stuTask -> stuTask.getDeletedAt() == null) // Exclude soft-deleted tasks
+                .map(stuTask -> {
+                    Task task = stuTask.getTask();
+                    TaskDTO taskDTO = new TaskDTO();
+                    taskDTO.setTaskId(task.getTaskId());
+                    taskDTO.setTaskName(task.getTaskName());
+                    taskDTO.setAttachments(task.getAttachments());
+                    taskDTO.setCreatedAt(task.getCreatedAt());
+                    taskDTO.setDueDate(task.getDueDate());
+                    taskDTO.setStudentStatus(task.getStudentStatus());
+                    taskDTO.setCompleteStatus(task.getCompleteStatus());
+                    taskDTO.setModifiedAt(task.getModifiedAt());
+                    taskDTO.setOpenStatus(task.getOpenStatus());
+                    taskDTO.setDeletedAt(task.getDeletedAt());
+                    taskDTO.setTaskObjective(task.getTaskObjective());
+                    taskDTO.setModifiedBy(task.getModifiedBy());
+                    taskDTO.setProjectId(task.getProject() != null ? task.getProject().getProjectId() : null);
+                    return taskDTO;
+                })
+                .collect(Collectors.toList());
+    }
     // Soft delete a task assignment
     public void softDeleteStuTask(UUID studentId, UUID taskId) {
         StuTaskId id = new StuTaskId(studentId, taskId);

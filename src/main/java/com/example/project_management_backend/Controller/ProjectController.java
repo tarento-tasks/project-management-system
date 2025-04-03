@@ -24,10 +24,8 @@ public class ProjectController {
 
     
     @GetMapping
-    @PreAuthorize("hasAnyRole('MENTOR', 'ADMIN', 'STUDENT')")
     public ResponseEntity<ApiResponse<List<ProjectDTO>>> getProjects(@RequestParam(required = false) UUID id) {
-        List<ProjectDTO> projects = projectService.getProjects(Optional.ofNullable(id));
-        return ResponseEntity.ok(new ApiResponse<>(HttpStatus.OK.value(), "Projects fetched successfully", projects));
+        return ResponseEntity.ok(projectService.getProjects(Optional.ofNullable(id)));
     }
     
 
