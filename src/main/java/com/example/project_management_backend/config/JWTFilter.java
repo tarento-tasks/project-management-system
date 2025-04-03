@@ -1,7 +1,6 @@
 package com.example.project_management_backend.config;
 
 import io.jsonwebtoken.Claims;
-
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -28,47 +27,42 @@ public class JWTFilter extends OncePerRequestFilter {
     }
 
     @Override
-protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain)
-        throws ServletException, IOException {
-    String header = request.getHeader("Authorization");
+    protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain)
+            throws ServletException, IOException {
+        String header = request.getHeader("Authorization");
 
-    if (header == null || !header.startsWith("Bearer ")) {
-        filterChain.doFilter(request, response);
-        return;
-    }
-
-    String token = header.replace("Bearer ", "");
-    try {
-        Claims claims = jwtUtil.extractAllClaims(token);
-
-        String username = claims.getSubject();
-        List<String> authorities = claims.get("authorities", List.class); 
-
-        logger.info("Extracted authorities from token: {}", authorities); 
-
-        if (username != null && SecurityContextHolder.getContext().getAuthentication() == null) {
-            
-            List<SimpleGrantedAuthority> grantedAuthorities = authorities.stream()
-                    .map(SimpleGrantedAuthority::new)
-                    .collect(Collectors.toList());
-
-            logger.info("Setting authentication for user: {} with authorities: {}", username, grantedAuthorities);
-
-            UsernamePasswordAuthenticationToken auth = new UsernamePasswordAuthenticationToken(
-                    username,
-                    null,
-                    grantedAuthorities 
-            );
-            SecurityContextHolder.getContext().setAuthentication(auth);
-
-         
-            logger.info("Authentication set: {}", SecurityContextHolder.getContext().getAuthentication());
+        if (header == null || !header.startsWith("Bearer ")) {
+            filterChain.doFilter(request, response);
+            return;
         }
-    } catch (Exception e) {
-        SecurityContextHolder.clearContext();
-        logger.error("JWT validation failed: {}", e.getMessage()); 
-    }
 
-    filterChain.doFilter(request, response);
-}
+        String token = header.replace("Bearer ", "");
+
+        // ✅ 🚨 Check if the token is invalidated
+        if (jwtUtil.isTokenInvalid(token)) {
+            response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
+            response.getWriter().write("Token is invalidated. Please log in again.");
+            return;
+        }
+
+        try {
+            Claims claims = jwtUtil.extractAllClaims(token);
+            String username = claims.getSubject();
+            List<String> authorities = claims.get("authorities", List.class);
+
+            if (username != null && SecurityContextHolder.getContext().getAuthentication() == null) {
+                List<SimpleGrantedAuthority> grantedAuthorities = authorities.stream()
+                        .map(SimpleGrantedAuthority::new)
+                        .collect(Collectors.toList());
+
+                UsernamePasswordAuthenticationToken auth = new UsernamePasswordAuthenticationToken(
+                        username, null, grantedAuthorities);
+                SecurityContextHolder.getContext().setAuthentication(auth);
+            }
+        } catch (Exception e) {
+            SecurityContextHolder.clearContext();
+        }
+
+        filterChain.doFilter(request, response);
+    }
 }
