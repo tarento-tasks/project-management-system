@@ -44,16 +44,16 @@ return ResponseEntity.ok(authService.login(loginRequest));
 }
 
 
-    @PostMapping("/logout")
-    public ResponseEntity<ApiResponse<String>> logout(@RequestHeader("Authorization") String token) {
-        if (token == null || !token.startsWith("Bearer ")) {
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
-                    .body(new ApiResponse<>(400, "Invalid token format", null));
-        }
 
-        String jwt = token.substring(7); 
-        jwtUtil.invalidateToken(jwt);  
-        System.out.println("Token invalidated successfully: " + jwt); 
-        return ResponseEntity.ok(new ApiResponse<>(200, "Logout successful", null));
+    @PostMapping("/logout")
+public ResponseEntity<ApiResponse<String>> logout(@RequestHeader("Authorization") String token) {
+    if (token == null || !token.startsWith("Bearer ")) {
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                .body(new ApiResponse<>(400, "Invalid token format", null));
     }
+
+    String jwt = token.substring(7);
+    jwtUtil.invalidateToken(jwt); 
+    return ResponseEntity.ok(new ApiResponse<>(200, "Logout successful", null));
+}
 }
