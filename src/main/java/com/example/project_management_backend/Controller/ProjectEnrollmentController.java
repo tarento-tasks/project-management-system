@@ -1,5 +1,3 @@
-
-
 package com.example.project_management_backend.Controller;
 import com.example.project_management_backend.Model.User;
 import com.example.project_management_backend.DTO.ApiResponse;
@@ -15,31 +13,40 @@ import org.springframework.web.bind.annotation.*;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.Authentication;
 import org.springframework.beans.factory.annotation.Autowired;
- 
+
 import java.util.List;
 import java.util.UUID;
- 
+
 @RestController
 @CrossOrigin(origins = "http://localhost:5173")
 @RequestMapping("/api/project-enrollment")
 public class ProjectEnrollmentController {
- 
+
     private final ProjectEnrollmentService enrollmentService;
- 
+
     private final UserRepository userRepository;
- 
+
     // Constructor-based injection for both services
     public ProjectEnrollmentController(ProjectEnrollmentService enrollmentService, UserRepository userRepository) {
         this.enrollmentService = enrollmentService;
         this.userRepository = userRepository;
     }
- 
+
     
- 
+
    
- 
+    @GetMapping("/approved-students")
+    @PreAuthorize("hasAnyRole('ADMIN', 'MENTOR')")
+    public ResponseEntity<ApiResponse<List<User>>> getApprovedStudentsForProject(
+            @RequestParam UUID projectId) {
+        List<User> students = enrollmentService.getApprovedStudentsForProject(projectId);
+        return ResponseEntity.ok(
+            new ApiResponse<>(HttpStatus.OK.value(), "Approved students fetched successfully", students)
+        );
+    }
+    
   
- 
+
     @PostMapping
 @PreAuthorize("hasAnyRole('STUDENT', 'ADMIN')")
 public ResponseEntity<ApiResponse<ProjectEnrollment>> createOrUpdateEnrollment(
@@ -59,13 +66,14 @@ public ResponseEntity<ApiResponse<ProjectEnrollment>> createOrUpdateEnrollment(
         return ResponseEntity.badRequest().body(new ApiResponse<>(HttpStatus.BAD_REQUEST.value(), e.getMessage(), null));
     }
 }
- 
+
    
-    @GetMapping
+@GetMapping
 @PreAuthorize("hasAnyRole('ADMIN', 'STUDENT')")
 public ResponseEntity<ApiResponse<?>> getEnrollments(
     @RequestParam(value = "enrollmentId", required = false) UUID enrollmentId,
-    @RequestParam(value = "studentId", required = false) UUID studentId
+    @RequestParam(value = "studentId", required = false) UUID studentId,
+    @RequestParam(value = "status", required = false) String status // <-- added filter
 ) {
     if (enrollmentId != null) {
         ProjectEnrollment enrollment = enrollmentService.getEnrollmentById(enrollmentId);
@@ -73,23 +81,32 @@ public ResponseEntity<ApiResponse<?>> getEnrollments(
             new ApiResponse<>(HttpStatus.OK.value(), "Enrollment fetched successfully", enrollment)
         );
     }
- 
+
     Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
     User user = userRepository.findByEmailAndDeletedAtIsNull(authentication.getName())
             .orElseThrow(() -> new RuntimeException("User not found"));
- 
+
     if (user.getRole().getRoleName().equals("STUDENT")) {
-        List<Project> approvedProjects = enrollmentService.getApprovedProjectsForStudent(user.getUserId());
-        return ResponseEntity.ok(
-            new ApiResponse<>(HttpStatus.OK.value(), "Approved projects fetched successfully", approvedProjects)
-        );
+        if ("APPROVED".equalsIgnoreCase(status)) {
+            // return approved projects only
+            List<Project> approvedProjects = enrollmentService.getApprovedProjectsForStudent(user.getUserId());
+            return ResponseEntity.ok(
+                new ApiResponse<>(HttpStatus.OK.value(), "Approved projects fetched successfully", approvedProjects)
+            );
+        } else {
+            // return all enrollments for student
+            List<ProjectEnrollment> enrollments = enrollmentService.getAllEnrollmentsForStudent(user.getUserId());
+            return ResponseEntity.ok(
+                new ApiResponse<>(HttpStatus.OK.value(), "All enrollments fetched successfully", enrollments)
+            );
+        }
     }
- 
+
     if (user.getRole().getRoleName().equals("ADMIN")) {
         if (studentId != null) {
-            List<Project> approvedProjects = enrollmentService.getApprovedProjectsForStudent(studentId);
+            List<ProjectEnrollment> enrollments = enrollmentService.getAllEnrollmentsForStudent(studentId);
             return ResponseEntity.ok(
-                new ApiResponse<>(HttpStatus.OK.value(), "Approved projects for student fetched successfully", approvedProjects)
+                new ApiResponse<>(HttpStatus.OK.value(), "Student enrollments fetched successfully", enrollments)
             );
         }
         List<ProjectEnrollment> enrollments = enrollmentService.getAllEnrollments();
@@ -97,13 +114,14 @@ public ResponseEntity<ApiResponse<?>> getEnrollments(
             new ApiResponse<>(HttpStatus.OK.value(), "All enrollments fetched successfully", enrollments)
         );
     }
- 
+
     return ResponseEntity.status(HttpStatus.FORBIDDEN).body(
         new ApiResponse<>(HttpStatus.FORBIDDEN.value(), "Access denied", null)
     );
 }
- 
- 
+
+
+
     @DeleteMapping("/{enrollmentId}")
     @PreAuthorize("hasAnyRole('ADMIN', 'STUDENT')")
     public ResponseEntity<ApiResponse<Void>> softDeleteEnrollment(@PathVariable UUID enrollmentId) {

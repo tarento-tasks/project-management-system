@@ -109,6 +109,11 @@ public class UserService {
             
             user = userRepository.findByUserIdAndDeletedAtIsNull(id)
                     .orElseThrow(() -> new RuntimeException("User not found or has been deleted!"));
+                    if (password != null && !password.isBlank()) {
+                        user.setPassword(passwordEncoder.encode(password));
+                    }
+                
+                    
         }
 
         user.setEmail(email);
