@@ -1,9 +1,12 @@
 package com.example.project_management_backend.Service;
 
+import com.example.project_management_backend.DTO.RoleDTO;
 import com.example.project_management_backend.DTO.UserDTO;
 import com.example.project_management_backend.Model.Role;
 import com.example.project_management_backend.Model.User;
 import com.example.project_management_backend.Repository.UserRepository;
+
+import jakarta.transaction.Transactional;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
@@ -30,35 +33,6 @@ public class UserService {
     }
 
 
-    public User createUser(String email, String password, String name, String dob,
-                           MultipartFile image, String previousWork, String qualifications, UUID roleId) throws IOException {
-        if (userRepository.findByEmail(email).isPresent()) {
-            throw new RuntimeException("Email already exists.");
-        }
-
-        Role role = roleService.getRoleById(roleId)
-                .map(roleDTO -> new Role(roleDTO.getRoleId(), roleDTO.getRoleName()))
-                .orElseThrow(() -> new RuntimeException("Invalid role ID"));
-
-        User user = new User();
-        user.setEmail(email);
-        user.setPassword(passwordEncoder.encode(password));
-        user.setName(name);
-        user.setDob(dob);
-        user.setPreviousWork(previousWork);
-        user.setQualifications(qualifications);
-        user.setRole(role);
-        user.setCreatedAt(LocalDateTime.now());
-        user.setModifiedAt(LocalDateTime.now());
-
-        if (image != null && !image.isEmpty()) {
-            user.setImages(image.getBytes());
-        }
-
-        return userRepository.save(user);
-    }
-
-
     public UserDTO convertToDTO(User user) {
         UUID roleId = (user.getRole() != null) ? user.getRole().getRoleId() : null;
         String base64Image = (user.getImages() != null)
@@ -71,100 +45,102 @@ public class UserService {
         );
     }
 
-
+    @Transactional
     public List<UserDTO> getAllUsers() {
-        return userRepository.findAll()
-                .stream()
-                .map(this::convertToDTO)
+        List<User> users = userRepository.findByDeletedAtIsNull();
+        return users.stream().map(this::convertToDTO).collect(Collectors.toList());
+    }
+
+
+
+    @Transactional
+    public List<UserDTO> getUsersByRole(String role) {
+        String roleName = role.toUpperCase(); // Spring Security format
+
+        List<User> users = userRepository.findByRoleName(roleName);
+
+        return users.stream()
+                .map(user -> {
+                    UserDTO dto = new UserDTO();
+                    dto.setUserId(user.getUserId());
+                    dto.setName(user.getName());
+
+                    dto.setRoleId(user.getRole().getRoleId()); // Only setting roleId
+
+                    return dto;
+                })
                 .collect(Collectors.toList());
     }
-
-
+    @Transactional
     public Optional<UserDTO> getUserById(UUID id) {
-        return userRepository.findById(id).map(this::convertToDTO);
+        return userRepository.findByUserIdAndDeletedAtIsNull(id)
+                .map(this::convertToDTO);
     }
-
 
     public Optional<UserDTO> getUserByEmail(String email) {
-        return userRepository.findByEmail(email).map(this::convertToDTO);
+        return userRepository.findByEmailAndDeletedAtIsNull(email)
+                .map(this::convertToDTO);
     }
 
 
-    public User updateUser(UUID id, String dob, String previousWork, String qualifications, MultipartFile image, String password) {
-        Optional<User> optionalUser = userRepository.findById(id);
-        if (optionalUser.isPresent()) {
-            User user = optionalUser.get();
+    @Transactional
+    public User createOrUpdateUser(UUID id, String email, String password, String name, String dob,
+                                   MultipartFile image, String previousWork, String qualifications, UUID roleId) {
 
-            if (dob != null) user.setDob(dob);
-            if (previousWork != null) user.setPreviousWork(previousWork);
-            if (qualifications != null) user.setQualifications(qualifications);
 
-            if (password != null && !password.isEmpty()) {
-                user.setPassword(passwordEncoder.encode(password));
-            }
-
-            try {
-                if (image != null && !image.isEmpty()) {
-                    user.setImages(image.getBytes());
-                }
-            } catch (IOException e) {
-                e.printStackTrace();
-            }
-
-            user.setModifiedAt(LocalDateTime.now());
-            return userRepository.save(user);
-        } else {
-            throw new RuntimeException("User not found with ID: " + id);
+        Optional<User> existingUser = userRepository.findByEmailAndDeletedAtIsNull(email);
+        if (existingUser.isPresent() && (id == null || !existingUser.get().getUserId().equals(id))) {
+            throw new RuntimeException("User with this email already exists!");
         }
-    }
+
+        User user;
 
 
-    public User updateUserByAdmin(UUID id, String email, String name, String dob, String previousWork,
-                                  String qualifications, UUID roleId, MultipartFile image, String password) {
-        Optional<User> optionalUser = userRepository.findById(id);
-        if (optionalUser.isPresent()) {
-            User user = optionalUser.get();
-
-            if (email != null) user.setEmail(email);
-            if (name != null) user.setName(name);
-            if (dob != null) user.setDob(dob);
-            if (previousWork != null) user.setPreviousWork(previousWork);
-            if (qualifications != null) user.setQualifications(qualifications);
-
-            if (password != null && !password.isEmpty()) {
-                user.setPassword(passwordEncoder.encode(password));
-            }
-
-            if (roleId != null) {
-                Optional<Role> role = roleService.getRoleById(roleId).map(roleDTO ->
-                        new Role(roleDTO.getRoleId(), roleDTO.getRoleName()));
-                role.ifPresent(user::setRole);
-            }
-
-            try {
-                if (image != null && !image.isEmpty()) {
-                    user.setImages(image.getBytes());
-                }
-            } catch (IOException e) {
-                e.printStackTrace();
-            }
-
-            user.setModifiedAt(LocalDateTime.now());
-            return userRepository.save(user);
+        if (id == null) {
+            user = new User();
+            user.setPassword(passwordEncoder.encode(password));
+            user.setCreatedAt(LocalDateTime.now());
         } else {
-            throw new RuntimeException("User not found with ID: " + id);
+
+            user = userRepository.findByUserIdAndDeletedAtIsNull(id)
+                    .orElseThrow(() -> new RuntimeException("User not found or has been deleted!"));
         }
+
+        user.setEmail(email);
+        user.setName(name);
+        user.setDob(dob);
+        user.setPreviousWork(previousWork);
+        user.setQualifications(qualifications);
+        user.setModifiedAt(LocalDateTime.now());
+
+
+        if (roleId != null) {
+            Optional<Role> role = roleService.getRoleById(roleId)
+                    .map(roleDTO -> new Role(roleDTO.getRoleId(), roleDTO.getRoleName()));
+            role.ifPresent(user::setRole);
+        }
+
+
+        try {
+            if (image != null && !image.isEmpty()) {
+                user.setImages(image.getBytes());
+            }
+        } catch (IOException e) {
+            throw new RuntimeException("Error processing image", e);
+        }
+
+        return userRepository.save(user);
     }
 
 
-    public void softDeleteUser(UUID id) {
-        Optional<User> optionalUser = userRepository.findById(id);
-        if (optionalUser.isPresent()) {
-            User user = optionalUser.get();
+    public boolean deleteUser(UUID id) {
+        Optional<User> userOpt = userRepository.findByUserIdAndDeletedAtIsNull(id);
+        if (userOpt.isPresent()) {
+            User user = userOpt.get();
             user.setDeletedAt(LocalDateTime.now());
             userRepository.save(user);
-        } else {
-            throw new RuntimeException("User not found with ID: " + id);
+            return true;
         }
+        return false;
     }
 }

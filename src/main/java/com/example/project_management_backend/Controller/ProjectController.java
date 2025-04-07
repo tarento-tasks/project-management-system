@@ -1,12 +1,13 @@
 package com.example.project_management_backend.Controller;
 
+import com.example.project_management_backend.DTO.ApiResponse;
 import com.example.project_management_backend.DTO.ProjectDTO;
 import com.example.project_management_backend.Service.ProjectService;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.*;
 import org.springframework.security.access.prepost.PreAuthorize;
-
+import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 import java.util.Optional;
@@ -14,44 +15,56 @@ import java.util.UUID;
 
 @RestController
 @RequestMapping("/api/projects")
+//@CrossOrigin(origins = "http://localhost:5173")  // Allow frontend to connect
 public class ProjectController {
 
     @Autowired
     private ProjectService projectService;
 
-    // Get All Projects
     @GetMapping
-    public ResponseEntity<List<ProjectDTO>> getAllProjects() {
-        return ResponseEntity.ok(projectService.getAllProjects());
+   // @PreAuthorize("hasAnyRole('MENTOR', 'ADMIN', 'STUDENT')")
+    public ResponseEntity<ApiResponse<List<ProjectDTO>>> getProjects(@RequestParam(required = false) UUID id) {
+        List<ProjectDTO> projects = projectService.getProjects(Optional.ofNullable(id));
+        return ResponseEntity.ok(new ApiResponse<>(HttpStatus.OK.value(), "Projects fetched successfully", projects));
     }
 
-    // Get Project by ID
     @GetMapping("/{id}")
-    public ResponseEntity<ProjectDTO> getProjectById(@PathVariable UUID id) {
-        Optional<ProjectDTO> project = projectService.getProjectById(id);
-        return project.map(ResponseEntity::ok).orElseGet(() -> ResponseEntity.notFound().build());
-    }
-
-    // Create Project
-    @PostMapping
-
-    public ResponseEntity<ProjectDTO> createProject(@RequestBody ProjectDTO projectDTO) {
-        return ResponseEntity.ok(projectService.createProject(projectDTO));
-    }
-
-    // Update Project
-    @PutMapping("/{id}")
-    public ResponseEntity<ProjectDTO> updateProject(@PathVariable UUID id, @RequestBody ProjectDTO projectDTO) {
-        Optional<ProjectDTO> updatedProject = projectService.updateProject(id, projectDTO);
-        return updatedProject.map(ResponseEntity::ok).orElseGet(() -> ResponseEntity.notFound().build());
-    }
-
-    // Delete Project
-    @DeleteMapping("/{id}")
-    public ResponseEntity<String> deleteProject(@PathVariable UUID id) {
-        if (projectService.deleteProject(id)) {
-            return ResponseEntity.ok("Project deleted successfully");
+// @PreAuthorize("hasAnyRole('MENTOR', 'ADMIN', 'STUDENT')")
+    public ResponseEntity<ApiResponse<ProjectDTO>> getProjectById(@PathVariable UUID id) {
+        try {
+            ProjectDTO projectDTO = projectService.getProjectById(id);
+            return ResponseEntity.ok(new ApiResponse<>(HttpStatus.OK.value(), "Project fetched successfully", projectDTO));
+        } catch (RuntimeException e) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                    .body(new ApiResponse<>(HttpStatus.NOT_FOUND.value(), e.getMessage(), null));
         }
-        return ResponseEntity.notFound().build();
+    }
+
+
+
+    @PostMapping
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<ApiResponse<ProjectDTO>> createOrUpdateProject(
+            @RequestBody ProjectDTO projectDTO, @RequestParam(required = false) UUID id) {
+        try {
+            ProjectDTO savedProject = projectService.saveOrUpdateProject(Optional.ofNullable(id), projectDTO);
+            return ResponseEntity.ok(new ApiResponse<>(HttpStatus.OK.value(), "Project saved successfully", savedProject));
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                    .body(new ApiResponse<>(HttpStatus.BAD_REQUEST.value(), e.getMessage(), null));
+        } catch (RuntimeException e) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                    .body(new ApiResponse<>(HttpStatus.NOT_FOUND.value(), e.getMessage(), null));
+        }
+    }
+
+    @DeleteMapping("/{id}")
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<ApiResponse<Void>> deleteProject(@PathVariable UUID id) {
+        if (projectService.deleteProject(id)) {
+            return ResponseEntity.ok(new ApiResponse<>(HttpStatus.OK.value(), "Project deleted successfully", null));
+        }
+        return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                .body(new ApiResponse<>(HttpStatus.NOT_FOUND.value(), "Project not found or already deleted", null));
     }
 }

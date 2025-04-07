@@ -2,12 +2,16 @@ package com.example.project_management_backend.Service;
 
 import com.example.project_management_backend.DTO.ProjectDTO;
 import com.example.project_management_backend.Model.Project;
+import com.example.project_management_backend.Model.ProjectStatus;
 import com.example.project_management_backend.Model.User;
 import com.example.project_management_backend.Repository.ProjectRepository;
 import com.example.project_management_backend.Repository.UserRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import jakarta.transaction.Transactional;
 
+import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
@@ -22,7 +26,6 @@ public class ProjectService {
     @Autowired
     private UserRepository userRepository;
 
-    // Convert Entity to DTO
     private ProjectDTO convertToDTO(Project project) {
         ProjectDTO dto = new ProjectDTO();
         dto.setProjectId(project.getProjectId());
@@ -35,33 +38,59 @@ public class ProjectService {
         dto.setLastDate(project.getLastDate());
         dto.setOpenStatus(project.isOpenStatus());
         dto.setMentorId(project.getMentor().getUserId());
+        dto.setProjectStatus(project.getProjectStatus());  // Convert projectStatus
         return dto;
     }
 
-    // Get All Projects
-    public List<ProjectDTO> getAllProjects() {
-        List<Project> projects = projectRepository.findAll();
-        return projects.stream().map(this::convertToDTO).collect(Collectors.toList());
+    @Transactional
+    public List<ProjectDTO> getProjects(Optional<UUID> projectId) {
+        if (projectId.isPresent()) {
+            return projectRepository.findByProjectIdAndDeletedAtIsNull(projectId.get())
+                    .map(this::convertToDTO)
+                    .map(List::of)
+                    .orElseThrow(() -> new RuntimeException("Project not found"));
+        }
+        return projectRepository.findByDeletedAtIsNull().stream()
+                .map(this::convertToDTO)
+                .collect(Collectors.toList());
     }
 
-    // Get Project by ID
-    public Optional<ProjectDTO> getProjectById(UUID id) {
-        return projectRepository.findById(id).map(this::convertToDTO);
+    @Transactional
+    public ProjectDTO getProjectById(UUID id) {
+        return projectRepository.findByProjectIdAndDeletedAtIsNull(id)
+                .map(this::convertToDTO)
+                .orElseThrow(() -> new RuntimeException("Project not found"));
     }
 
-    // Create Project
-    public ProjectDTO createProject(ProjectDTO projectDTO) {
-        Optional<User> mentorOpt = userRepository.findById(projectDTO.getMentorId());
-        if (mentorOpt.isEmpty()) {
-            throw new IllegalArgumentException("Mentor not found");
+
+    @Transactional
+    public ProjectDTO saveOrUpdateProject(Optional<UUID> projectId, ProjectDTO projectDTO) {
+
+        if (projectRepository.findByTitleIgnoreCase(projectDTO.getTitle()).isPresent()) {
+            throw new IllegalArgumentException("Project title already exists. Choose a different name.");
         }
 
+        Project project = projectId.flatMap(projectRepository::findById)
+                .filter(p -> p.getDeletedAt() == null)
+                .orElse(new Project());
+
+        User mentor = userRepository.findById(projectDTO.getMentorId())
+                .orElseThrow(() -> new IllegalArgumentException("Mentor not found"));
+
+        LocalDateTime currentDateTime = LocalDateTime.now();
+        LocalDate currentDate = currentDateTime.toLocalDate();
+
+        if (projectDTO.getLastDate().isBefore(currentDate)) {
+            throw new IllegalArgumentException("Last date cannot be before the current date.");
+        }
+
+        if (projectDTO.getDueDate().isBefore(currentDate)) {
+            throw new IllegalArgumentException("Due date cannot be before the current date.");
+        }
         if (!projectDTO.getLastDate().isBefore(projectDTO.getDueDate())) {
             throw new IllegalArgumentException("Last date must be before due date");
         }
 
-
-        Project project = new Project();
         project.setTitle(projectDTO.getTitle());
         project.setObjective(projectDTO.getObjective());
         project.setDescription(projectDTO.getDescription());
@@ -70,43 +99,22 @@ public class ProjectService {
         project.setRepo(projectDTO.getRepo());
         project.setLastDate(projectDTO.getLastDate());
         project.setOpenStatus(projectDTO.isOpenStatus());
-        project.setMentor(mentorOpt.get());
+        project.setMentor(mentor);
 
-        Project savedProject = projectRepository.save(project);
-        return convertToDTO(savedProject);
+        // Set Project Status (default: IN_PROGRESS)
+        project.setProjectStatus(projectDTO.getProjectStatus() != null ? projectDTO.getProjectStatus() : ProjectStatus.IN_PROGRESS);
+
+        return convertToDTO(projectRepository.save(project));
     }
 
-    // Update Project
-    public Optional<ProjectDTO> updateProject(UUID id, ProjectDTO projectDTO) {
-        Optional<Project> projectOpt = projectRepository.findById(id);
-        if (projectOpt.isPresent()) {
-            Project project = projectOpt.get();
-
-            if (!projectDTO.getLastDate().isBefore(projectDTO.getDueDate())) {
-                throw new IllegalArgumentException("Last date must be before due date");
-            }
-
-            project.setTitle(projectDTO.getTitle());
-            project.setObjective(projectDTO.getObjective());
-            project.setDescription(projectDTO.getDescription());
-            project.setDueDate(projectDTO.getDueDate());
-            project.setCriteria(projectDTO.getCriteria());
-            project.setRepo(projectDTO.getRepo());
-            project.setLastDate(projectDTO.getLastDate());
-            project.setOpenStatus(projectDTO.isOpenStatus());
-
-            Project updatedProject = projectRepository.save(project);
-            return Optional.of(convertToDTO(updatedProject));
-        }
-        return Optional.empty();
-    }
-
-    // Delete Project
+    @Transactional
     public boolean deleteProject(UUID id) {
-        if (projectRepository.existsById(id)) {
-            projectRepository.deleteById(id);
-            return true;
-        }
-        return false;
+        return projectRepository.findById(id)
+                .filter(p -> p.getDeletedAt() == null)
+                .map(p -> {
+                    p.setDeletedAt(LocalDateTime.now());
+                    projectRepository.save(p);
+                    return true;
+                }).orElse(false);
     }
 }

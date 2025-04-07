@@ -1,8 +1,8 @@
 package com.example.project_management_backend.DTO;
-
+import com.example.project_management_backend.Model.ProjectStatus;
 import lombok.Data;
 import java.time.LocalDate;
-import java.time.LocalDateTime;
+
 import java.util.UUID;
 
 @Data
@@ -16,5 +16,6 @@ public class ProjectDTO {
     private String repo;
     private LocalDate lastDate;
     private boolean openStatus;
-    private UUID mentorId; // Storing mentor ID instead of full User object
+    private UUID mentorId;
+    private ProjectStatus projectStatus;
 }
