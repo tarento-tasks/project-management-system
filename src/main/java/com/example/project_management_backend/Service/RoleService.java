@@ -5,7 +5,7 @@ import com.example.project_management_backend.Model.Role;
 import com.example.project_management_backend.Repository.RoleRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
- 
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
@@ -17,27 +17,44 @@ public class RoleService {
     @Autowired
     private RoleRepository roleRepository;
  
+    // ✅ Get all active roles
     public List<RoleDTO> getAllRoles() {
-        return roleRepository.findAll().stream()
+        return roleRepository.findAllActiveRoles().stream()
                 .map(role -> new RoleDTO(role.getRoleId(), role.getRoleName()))
                 .collect(Collectors.toList());
     }
  
+    // ✅ Get role by ID (Only active)
     public Optional<RoleDTO> getRoleById(UUID roleId) {
-        return roleRepository.findById(roleId)
+        return roleRepository.findActiveRoleById(roleId)
                 .map(role -> new RoleDTO(role.getRoleId(), role.getRoleName()));
     }
  
+    // ✅ Get role by Name (Only active)
     public Optional<RoleDTO> getRoleByName(String roleName) {
-        return roleRepository.findByRoleName(roleName)
+        return roleRepository.findActiveRoleByName(roleName)
                 .map(role -> new RoleDTO(role.getRoleId(), role.getRoleName()));
     }
  
-    public Role saveRole(Role role) {
-        return roleRepository.save(role);
+    // ✅ Create a new role
+    public RoleDTO saveRole(RoleDTO roleDTO) {
+        Role role = new Role();
+        role.setRoleName(roleDTO.getRoleName());
+        Role savedRole = roleRepository.save(role);
+        return new RoleDTO(savedRole.getRoleId(), savedRole.getRoleName());
     }
  
-    public void deleteRole(UUID roleId) {
-        roleRepository.deleteById(roleId);
+    // ✅ Soft delete a role
+    public boolean deleteRole(UUID roleId) {
+        Optional<Role> roleOpt = roleRepository.findById(roleId);
+        if (roleOpt.isPresent()) {
+            Role role = roleOpt.get();
+            if (role.getDeletedAt() == null) {
+                role.setDeletedAt(LocalDateTime.now()); // Soft delete
+                roleRepository.save(role);
+                return true;
+            }
+        }
+        return false;
     }
 }

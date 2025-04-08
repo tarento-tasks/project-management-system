@@ -102,6 +102,17 @@ public ResponseEntity<ApiResponse<?>> getEnrollments(
 }
 
 
+@GetMapping("/approved-students")
+@PreAuthorize("hasAnyRole('ADMIN', 'MENTOR')")
+public ResponseEntity<ApiResponse<List<User>>> getApprovedStudentsForProject(
+        @RequestParam UUID projectId) {
+    List<User> students = enrollmentService.getApprovedStudentsForProject(projectId);
+    return ResponseEntity.ok(
+        new ApiResponse<>(HttpStatus.OK.value(), "Approved students fetched successfully", students)
+    );
+}
+
+
     @DeleteMapping("/{enrollmentId}")
     @PreAuthorize("hasAnyRole('ADMIN', 'STUDENT')")
     public ResponseEntity<ApiResponse<Void>> softDeleteEnrollment(@PathVariable UUID enrollmentId) {

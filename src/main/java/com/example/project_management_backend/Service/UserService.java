@@ -82,6 +82,30 @@ public class UserService {
     }
 
     @Transactional
+    public List<UserDTO> getUsersByRole(String role) {
+        String roleName = role.toUpperCase(); // Spring Security format
+        
+        List<User> users = userRepository.findByRoleName(roleName);
+        
+        return users.stream()
+                .map(user -> {
+                    UserDTO dto = new UserDTO();
+                    dto.setUserId(user.getUserId());
+                    dto.setName(user.getName());
+                    dto.setDob(user.getDob());
+                    dto.setEmail(user.getEmail());
+                    dto.setPreviousWork(user.getPreviousWork());
+                    dto.setQualifications(user.getQualifications());
+                
+ 
+                    dto.setRoleId(user.getRole().getRoleId()); // Only setting roleId
+                    
+                    return dto;
+                })
+                .collect(Collectors.toList());
+    }
+
+    @Transactional
     public Optional<UserDTO> getUserById(UUID id) {
         return userRepository.findByUserIdAndDeletedAtIsNull(id)
                 .map(this::convertToDTO);

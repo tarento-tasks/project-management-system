@@ -5,6 +5,8 @@ import com.example.project_management_backend.Model.Role;
 import com.example.project_management_backend.Service.RoleService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
+import org.springframework.http.HttpStatus;
+import com.example.project_management_backend.DTO.ApiResponse;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.bind.annotation.CrossOrigin;
@@ -20,44 +22,57 @@ public class RoleController {
     @Autowired
     private RoleService roleService;
  
-    @GetMapping
-    @PreAuthorize("hasRole('ADMIN')")
-    public List<RoleDTO> getAllRoles() {
-        return roleService.getAllRoles();
-    }
- 
-    @GetMapping("/{id}")
-    @PreAuthorize("hasRole('ADMIN')")
-    public ResponseEntity<RoleDTO> getRoleById(@PathVariable UUID id) {
-        Optional<RoleDTO> role = roleService.getRoleById(id);
-        return role.map(ResponseEntity::ok).orElseGet(() -> ResponseEntity.notFound().build());
-    }
- 
-    @GetMapping("/name/{roleName}")
-    @PreAuthorize("hasRole('ADMIN')")
-    public ResponseEntity<RoleDTO> getRoleByName(@PathVariable String roleName) {
-        Optional<RoleDTO> role = roleService.getRoleByName(roleName);
-        return role.map(ResponseEntity::ok).orElseGet(() -> ResponseEntity.notFound().build());
-    }
- 
-  
-   
- 
-@PostMapping
+@GetMapping
 @PreAuthorize("hasRole('ADMIN')")
-public ResponseEntity<?> createRole(@RequestBody Role role) {
-    try {
-        Role savedRole = roleService.saveRole(role);
-        return ResponseEntity.ok(savedRole);
-    } catch (DataIntegrityViolationException e) {
-        return ResponseEntity.badRequest().body("Role name already exists");
+public ResponseEntity<ApiResponse<?>> getRoles(@RequestParam(required = false) UUID roleId,
+                                               @RequestParam(required = false) String roleName) {
+    if (roleId != null) {
+        Optional<RoleDTO> role = roleService.getRoleById(roleId);
+        if (role.isPresent()) {
+            return ResponseEntity.ok(new ApiResponse<>(HttpStatus.OK.value(), "Role found", role.get()));
+        } else {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                    .body(new ApiResponse<>(HttpStatus.NOT_FOUND.value(), "Role not found", null));
+        }
     }
+ 
+    if (roleName != null) {
+        Optional<RoleDTO> role = roleService.getRoleByName(roleName);
+        if (role.isPresent()) {
+            return ResponseEntity.ok(new ApiResponse<>(HttpStatus.OK.value(), "Role found", role.get()));
+        } else {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                    .body(new ApiResponse<>(HttpStatus.NOT_FOUND.value(), "Role not found", null));
+        }
+    }
+ 
+    List<RoleDTO> roles = roleService.getAllRoles();
+    return ResponseEntity.ok(new ApiResponse<>(HttpStatus.OK.value(), "Roles retrieved successfully", roles));
 }
  
-@DeleteMapping("/{id}")
-@PreAuthorize("hasRole('ADMIN')")
-public ResponseEntity<Void> deleteRole(@PathVariable UUID id) {
-        roleService.deleteRole(id);
-        return ResponseEntity.noContent().build();
+ 
+    @PostMapping
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<ApiResponse<RoleDTO>> createRole(@RequestBody RoleDTO roleDTO) {
+        try {
+            RoleDTO savedRole = roleService.saveRole(roleDTO);
+            return ResponseEntity.status(HttpStatus.CREATED)
+                    .body(new ApiResponse<>(HttpStatus.CREATED.value(), "Role created successfully", savedRole));
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                    .body(new ApiResponse<>(HttpStatus.BAD_REQUEST.value(), "Role name already exists", null));
+        }
+    }
+ 
+ 
+    @DeleteMapping("/{id}")
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<ApiResponse<Void>> deleteRole(@PathVariable UUID id) {
+        boolean deleted = roleService.deleteRole(id);
+        if (deleted) {
+            return ResponseEntity.ok(new ApiResponse<>(HttpStatus.OK.value(), "Role deleted successfully", null));
+        }
+        return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                .body(new ApiResponse<>(HttpStatus.NOT_FOUND.value(), "Role not found or already deleted", null));
     }
 }

@@ -14,6 +14,7 @@ import org.springframework.stereotype.Service;
 import jakarta.transaction.Transactional;
 
 import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 import java.util.stream.Collectors;
@@ -151,9 +152,16 @@ public class TaskService {
             throw new RuntimeException("You are not authorized to view tasks for this project");
         }
 
-        return taskRepository.findByProject_ProjectId(projectId).stream()
-                .map(this::convertToDTO)
-                .collect(Collectors.toList());
+        List<Task> tasks = taskRepository.findByProject_ProjectId(projectId);
+
+    // If no tasks found, just return an empty list (this is already safe)
+    if (tasks == null || tasks.isEmpty()) {
+        return new ArrayList<>(); // or `Collections.emptyList();`
+    }
+
+    return tasks.stream()
+            .map(this::convertToDTO)
+            .collect(Collectors.toList());
     }
 
     

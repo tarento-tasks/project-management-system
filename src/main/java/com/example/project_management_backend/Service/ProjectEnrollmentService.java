@@ -68,6 +68,15 @@ public class ProjectEnrollmentService {
         return enrollmentRepository.save(enrollment);
     }
 
+    public List<User> getApprovedStudentsForProject(UUID projectId) {
+        List<ProjectEnrollment> enrollments = enrollmentRepository
+            .findByProject_ProjectIdAndStatusAndDeletedAtIsNull(projectId, "APPROVED");
+     
+        return enrollments.stream()
+            .map(ProjectEnrollment::getStudent)
+            .collect(Collectors.toList());
+    }
+
     public List<Project> getApprovedProjectsForStudent(UUID studentId) {
     // Verify student exists
     User student = userRepository.findById(studentId)

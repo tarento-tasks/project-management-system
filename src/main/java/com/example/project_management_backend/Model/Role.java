@@ -1,5 +1,7 @@
 package com.example.project_management_backend.Model;
 import jakarta.persistence.*;
+
+import java.time.LocalDateTime;
 import java.util.UUID;
  
 @Entity
@@ -13,7 +15,7 @@ public class Role {
     @Column(nullable = false, unique = true)
     private String roleName;
     
- 
+    private LocalDateTime deletedAt;
    
     public Role() {}
  
@@ -46,5 +48,13 @@ public class Role {
     
     public void setRoleName(String roleName) {
         this.roleName = roleName;
+    }
+
+    public LocalDateTime getDeletedAt() {
+        return deletedAt;
+    }
+ 
+    public void setDeletedAt(LocalDateTime deletedAt) {
+        this.deletedAt = deletedAt;
     }
 }

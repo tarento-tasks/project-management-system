@@ -45,7 +45,7 @@ public SkillDTO createOrUpdateSkill(UUID id, SkillDTO skillDTO) {
 
     Skill skill;
 
-    // If updating, validate ID first
+    
     if (id != null) {
         skill = skillRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Skill not found"));

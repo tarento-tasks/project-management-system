@@ -1,9 +1,11 @@
 package com.example.project_management_backend.Controller;
-import org.springframework.web.bind.annotation.CrossOrigin;
+import com.example.project_management_backend.DTO.ApiResponse;
 import com.example.project_management_backend.DTO.SkillDTO;
 import com.example.project_management_backend.Service.SkillService;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -18,22 +20,30 @@ public class SkillController {
     @Autowired
     private SkillService skillService;
 
-    /**
-     * Get all skills or a specific skill by ID
-     */
+    
     @GetMapping
-    public ResponseEntity<?> getSkills(@RequestParam Optional<UUID> id) {
-        if (id.isPresent()) {
-            SkillDTO skill = skillService.getSkillById(id.get());
-            return ResponseEntity.ok(skill);
+    @PreAuthorize("hasAnyRole('MENTOR', 'ADMIN', 'STUDENT')")
+    public ResponseEntity<ApiResponse<?>> getSkills(
+            @RequestParam(value = "id", required = false) UUID id,
+            @RequestParam(value = "name", required = false) String name) {
+        
+  
+        if (id != null) {
+            SkillDTO skill = skillService.getSkillById(id);
+            if (skill != null) {
+                return ResponseEntity.ok(new ApiResponse<>(HttpStatus.OK.value(), "Skill found", skill));
+            } else {
+                return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                        .body(new ApiResponse<>(HttpStatus.NOT_FOUND.value(), "Skill not found", null));
+            }
         }
+
+      
         List<SkillDTO> skills = skillService.getAllSkills();
-        return ResponseEntity.ok(skills);
+        return ResponseEntity.ok(new ApiResponse<>(HttpStatus.OK.value(), "List of skills", skills));
     }
 
-    /**
-     * Create or update a skill
-     */
+    
     @PostMapping
     public ResponseEntity<SkillDTO> createOrUpdateSkill(@RequestBody SkillDTO skillDTO,
                                                         @RequestParam(required = false) UUID id) {
