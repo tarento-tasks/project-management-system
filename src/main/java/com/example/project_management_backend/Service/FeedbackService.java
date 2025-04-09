@@ -7,9 +7,6 @@ import com.example.project_management_backend.Repository.FeedbackRepository;
 import com.example.project_management_backend.Repository.TaskRepository;
 import jakarta.transaction.Transactional;
 import org.springframework.stereotype.Service;
-import com.example.project_management_backend.Exception.ResourceNotFoundException;
-import java.util.Optional;
-
 
 import java.util.List;
 import java.util.UUID;
@@ -26,32 +23,25 @@ public class FeedbackService {
         this.taskRepository = taskRepository;
     }
 
-    public FeedbackDTO addFeedback(UUID taskId, String feedbackText) {
+    public FeedbackDTO addFeedback(UUID taskId, UUID mentorId, String feedbackText) {
         Task task = taskRepository.findById(taskId)
-                .orElseThrow(() -> new ResourceNotFoundException("Task not found with ID: " + taskId));
-
+                .orElseThrow(() -> new RuntimeException("Task not found"));
 
         Feedback feedback = new Feedback();
         feedback.setTask(task);
-       // feedback.setMentorId(mentorId);
+        feedback.setMentorId(mentorId);
         feedback.setFeedback(feedbackText);
 
         Feedback savedFeedback = feedbackRepository.save(feedback);
         return new FeedbackDTO(savedFeedback.getFeedbackId(), savedFeedback.getFeedback(),
-                savedFeedback.getTask().getTaskId(),  savedFeedback.getCreatedAt());
+                savedFeedback.getTask().getTaskId(), savedFeedback.getMentorId(), savedFeedback.getCreatedAt());
     }
     @Transactional
     public List<FeedbackDTO> getFeedbackByTaskId(UUID taskId) {
-
-        boolean exists = taskRepository.existsById(taskId);
-        if (!exists) {
-            throw new ResourceNotFoundException("Task not found with ID: " + taskId);
-        }
-
         List<Feedback> feedbacks = feedbackRepository.findByTask_TaskId(taskId);
         return feedbacks.stream()
                 .map(feedback -> new FeedbackDTO(feedback.getFeedbackId(), feedback.getFeedback(),
-                        feedback.getTask().getTaskId(),feedback.getCreatedAt()))
+                        feedback.getTask().getTaskId(), feedback.getMentorId(), feedback.getCreatedAt()))
                 .collect(Collectors.toList());
     }
 }
