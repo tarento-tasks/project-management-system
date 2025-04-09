@@ -100,6 +100,21 @@ public class ProjectEnrollmentService {
             .collect(Collectors.toList());
 }
 
+
+public List<ProjectEnrollment> getAllEnrollmentsForStudent(UUID studentId) {
+    
+    User student = userRepository.findById(studentId)
+            .orElseThrow(() -> new RuntimeException("Student not found"));
+    
+ 
+    if (!"STUDENT".equals(student.getRole().getRoleName())) {
+        throw new AccessDeniedException("Only students can have project enrollments");
+    }
+    
+ 
+    return enrollmentRepository.findByStudent_UserIdAndDeletedAtIsNullAndProject_DeletedAtIsNull(studentId);
+}
+ 
     public List<ProjectEnrollment> getAllEnrollments() {
         return enrollmentRepository.findByProject_DeletedAtIsNullAndDeletedAtIsNull();
     }

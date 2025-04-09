@@ -63,7 +63,9 @@ public ResponseEntity<ApiResponse<ProjectEnrollment>> createOrUpdateEnrollment(
 @PreAuthorize("hasAnyRole('ADMIN', 'STUDENT')")
 public ResponseEntity<ApiResponse<?>> getEnrollments(
     @RequestParam(value = "enrollmentId", required = false) UUID enrollmentId,
-    @RequestParam(value = "studentId", required = false) UUID studentId
+    @RequestParam(value = "studentId", required = false) UUID studentId,
+    @RequestParam(value = "status", required = false) String status
+
 ) {
     if (enrollmentId != null) {
         ProjectEnrollment enrollment = enrollmentService.getEnrollmentById(enrollmentId);
@@ -76,12 +78,21 @@ public ResponseEntity<ApiResponse<?>> getEnrollments(
     User user = userRepository.findByEmailAndDeletedAtIsNull(authentication.getName())
             .orElseThrow(() -> new RuntimeException("User not found"));
 
-    if (user.getRole().getRoleName().equals("STUDENT")) {
-        List<Project> approvedProjects = enrollmentService.getApprovedProjectsForStudent(user.getUserId());
-        return ResponseEntity.ok(
-            new ApiResponse<>(HttpStatus.OK.value(), "Approved projects fetched successfully", approvedProjects)
-        );
-    }
+            if (user.getRole().getRoleName().equals("STUDENT")) {
+                if ("APPROVED".equalsIgnoreCase(status)) {
+                    // return approved projects only
+                    List<Project> approvedProjects = enrollmentService.getApprovedProjectsForStudent(user.getUserId());
+                    return ResponseEntity.ok(
+                        new ApiResponse<>(HttpStatus.OK.value(), "Approved projects fetched successfully", approvedProjects)
+                    );
+                } else {
+                    // return all enrollments for student
+                    List<ProjectEnrollment> enrollments = enrollmentService.getAllEnrollmentsForStudent(user.getUserId());
+                    return ResponseEntity.ok(
+                        new ApiResponse<>(HttpStatus.OK.value(), "All enrollments fetched successfully", enrollments)
+                    );
+                }
+            }
 
     if (user.getRole().getRoleName().equals("ADMIN")) {
         if (studentId != null) {
