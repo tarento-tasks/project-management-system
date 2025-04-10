@@ -14,6 +14,9 @@ import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeParseException;
 import java.util.List;
 import java.util.UUID;
+import org.springframework.http.HttpHeaders;
+import com.example.project_management_backend.Model.Task;
+import org.springframework.http.MediaType;
 
 import com.example.project_management_backend.DTO.ApiResponse;
 
@@ -45,42 +48,47 @@ public class TaskController {
             @PathVariable UUID taskId,
             @RequestParam(value = "taskName", required = false) String taskName,
             @RequestParam(value = "taskObjective", required = false) String taskObjective,
-            @RequestParam(value = "dueDate", required = false) String dueDateStr, 
+            @RequestParam(value = "dueDate", required = false) String dueDateStr,
             @RequestParam(value = "completeStatus", required = false) String completeStatus,
             @RequestParam(value = "studentStatus", required = false) String studentStatus,
             @RequestParam(value = "attachments", required = false) MultipartFile attachments) {
-
-        TaskDTO taskDTO = new TaskDTO();
-        taskDTO.setTaskName(taskName);
-        taskDTO.setTaskObjective(taskObjective);
-
-        
+ 
+        // First get the existing task to preserve existing values
+        TaskDTO existingTaskDTO = taskService.convertToDTO(taskService.getTaskById(taskId));
+ 
+        // Only update fields that were provided
+        if (taskName != null) {
+            existingTaskDTO.setTaskName(taskName);
+        }
+        if (taskObjective != null) {
+            existingTaskDTO.setTaskObjective(taskObjective);
+        }
         if (dueDateStr != null) {
             try {
                 LocalDateTime dueDate = LocalDateTime.parse(dueDateStr, DateTimeFormatter.ISO_LOCAL_DATE_TIME);
-                taskDTO.setDueDate(dueDate);
+                existingTaskDTO.setDueDate(dueDate);
             } catch (DateTimeParseException e) {
                 throw new RuntimeException("Invalid date format. Expected format: yyyy-MM-dd'T'HH:mm:ss", e);
             }
         }
-
-        taskDTO.setCompleteStatus(completeStatus);
-        taskDTO.setStudentStatus(studentStatus);
-
-        
+        if (completeStatus != null) {
+            existingTaskDTO.setCompleteStatus(completeStatus);
+        }
+        if (studentStatus != null) {
+            existingTaskDTO.setStudentStatus(studentStatus);
+        }
         if (attachments != null) {
             try {
-                taskDTO.setAttachments(attachments.getBytes());
-            } catch (IOException e) { 
+                existingTaskDTO.setAttachments(attachments.getBytes());
+            } catch (IOException e) {
                 throw new RuntimeException("Failed to process file upload", e);
             }
         }
-
-        TaskDTO updatedTask = taskService.updateTask(taskId, taskDTO);
+ 
+        TaskDTO updatedTask = taskService.updateTask(taskId, existingTaskDTO);
         ApiResponse<TaskDTO> response = new ApiResponse<>(200, "Task updated successfully", updatedTask);
         return ResponseEntity.ok(response);
     }
-
     
     @GetMapping
    
@@ -101,6 +109,21 @@ public class TaskController {
         return ResponseEntity.ok(response);
     }
 
+    @GetMapping("/{taskId}/attachment")
+    public ResponseEntity<byte[]> downloadAttachment(@PathVariable UUID taskId) {
+        Task task = taskService.getTaskById(taskId);
+        if (task.getAttachments() == null || task.getAttachments().length == 0) {
+            return ResponseEntity.notFound().build();
+        }
+ 
+        // Determine content type (you might want to store this when uploading)
+        String contentType = "application/octet-stream"; // Default to binary
+ 
+        return ResponseEntity.ok()
+                .contentType(MediaType.parseMediaType(contentType))
+                .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"task_attachment_" + taskId + "\"")
+                .body(task.getAttachments());
+    }
    
 
    

@@ -1,11 +1,13 @@
 package com.example.project_management_backend.Controller;
 
+import com.example.project_management_backend.DTO.ApiResponse;
 import com.example.project_management_backend.DTO.SkillMappingRequest;
 import com.example.project_management_backend.Model.SkillMapping;
 import com.example.project_management_backend.Service.SkillMappingService;
-import org.springframework.web.bind.annotation.CrossOrigin;
+
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -25,11 +27,14 @@ public class SkillMappingController {
 
     // 🔹 Unified GET: Fetch mappings by userId or skillId (or all if none provided)
     @GetMapping
-    public ResponseEntity<List<SkillMappingRequest>> getSkillMappings(
-            @RequestParam Optional<UUID> userId, 
+    @PreAuthorize("hasAnyRole('MENTOR', 'ADMIN', 'STUDENT')")
+    public ResponseEntity<ApiResponse<List<SkillMappingRequest>>> getSkillMappings(
+            @RequestParam Optional<UUID> userId,
             @RequestParam Optional<UUID> skillId) {
-        
-        return ResponseEntity.ok(skillMappingService.getSkillMappings(userId, skillId));
+ 
+        List<SkillMappingRequest> skillMappings = skillMappingService.getSkillMappings(userId, skillId);
+        ApiResponse<List<SkillMappingRequest>> response = new ApiResponse<>(200, "Skill mappings retrieved successfully", skillMappings);
+        return ResponseEntity.ok(response);
     }
 
     @PostMapping("/users/{userId}/skills/{skillId}")

@@ -62,39 +62,25 @@ public class SkillMappingService {
         return skillMappingRepository.save(skillMapping);
     }
 
-    /**
-     * Retrieves skill mappings by userId, skillId, or all mappings.
-     */
+    
     @Transactional
     public List<SkillMappingRequest> getSkillMappings(Optional<UUID> userId, Optional<UUID> skillId) {
         if (userId.isPresent()) {
-            // Ensure user exists before fetching
-            if (!userRepository.existsById(userId.get())) {
-                throw new ResourceNotFoundException(USER_NOT_FOUND_MSG);
-            }
             return skillMappingRepository.findByUser_UserId(userId.get()).stream()
-                    .map(this::convertToDTO)
+                    .map(mapping -> new SkillMappingRequest(mapping.getUser().getUserId(), mapping.getSkill().getSkillId()))
                     .collect(Collectors.toList());
-        } 
-        
-        if (skillId.isPresent()) {
-            // Ensure skill exists before fetching
-            if (!skillRepository.existsById(skillId.get())) {
-                throw new ResourceNotFoundException(SKILL_NOT_FOUND_MSG);
-            }
+        } else if (skillId.isPresent()) {
             return skillMappingRepository.findBySkill_SkillId(skillId.get()).stream()
-                    .map(this::convertToDTO)
+                    .map(mapping -> new SkillMappingRequest(mapping.getUser().getUserId(), mapping.getSkill().getSkillId()))
                     .collect(Collectors.toList());
         }
-        
         return skillMappingRepository.findAll().stream()
-                .map(this::convertToDTO)
+                .map(mapping -> new SkillMappingRequest(mapping.getUser().getUserId(), mapping.getSkill().getSkillId()))
                 .collect(Collectors.toList());
     }
+ 
 
-    /**
-     * Converts a SkillMapping entity to a SkillMappingRequest DTO.
-     */
+    
     private SkillMappingRequest convertToDTO(SkillMapping mapping) {
         return new SkillMappingRequest(mapping.getUser().getUserId(), mapping.getSkill().getSkillId());
     }
